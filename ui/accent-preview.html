@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Yuta — accent studies</title>
+  <style>
+    :root{color-scheme:dark;font-family:'Segoe UI Variable','Segoe UI',sans-serif;font-synthesis:none;--accent:#c2b6ec;--ink:#2a2243;--bg:#090b10;--surface:#101219;--text:#f0f0ed;--muted:#969ba7;--line:#ffffff13}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}button{font:inherit;cursor:pointer}button:focus-visible{outline:2px solid var(--accent);outline-offset:4px}button:disabled{opacity:.45;cursor:wait}button,iframe{ -webkit-tap-highlight-color:transparent}button{transition:background .15s,border-color .15s,color .15s}button:active{transform:translateY(1px)}button[hidden],[hidden]{display:none!important}main{max-width:1136px;margin:0 auto;padding:38px 32px 48px}header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding-bottom:34px}.brand{font-size:25px;font-weight:650;letter-spacing:-1.1px;display:inline-flex;align-items:center;gap:9px}.brand i{width:5px;height:5px;border-radius:50%;background:var(--accent)}.eyebrow{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}h1{font-size:clamp(28px,4vw,43px);font-weight:500;letter-spacing:-1.7px;line-height:1.12;margin:0 0 12px}p{margin:0;font-size:13px;line-height:1.7;color:var(--muted)}.intro{margin-bottom:28px}.intro p{max-width:570px}.palette-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:11px}.palette-card{padding:0;text-align:left;border:1px solid #ffffff12;border-radius:14px;overflow:hidden;color:var(--text);background:#11131a;width:100%}.palette-card:hover{border-color:#ffffff35;background:#151820}.palette-card[aria-pressed=true]{border-color:var(--color);box-shadow:0 0 0 1px color-mix(in srgb,var(--color) 18%,transparent)}.card-caption{display:flex;align-items:center;justify-content:space-between;padding:14px 13px;gap:8px}.card-name{display:block;font-size:12px;font-weight:600}.card-note{display:block;color:#9298a5;font-size:10px;margin-top:5px}.swatch{width:16px;height:16px;border-radius:50%;background:var(--color);flex-shrink:0;display:grid;place-items:center;color:var(--dark)}.swatch svg{width:10px;height:10px;opacity:0}.palette-card[aria-pressed=true] .swatch svg{opacity:1}.mini-scene{height:157px;display:block;position:relative;overflow:hidden;background:linear-gradient(150deg,#303440,#1b202a 70%,#282d36);border-bottom:1px solid #ffffff09}.mini-scene:after{content:'';position:absolute;left:0;right:0;bottom:0;height:44px;background:linear-gradient(transparent,#13161b33);pointer-events:none}.mini-notch{width:49px;height:8px;background:#090b10;border-radius:0 0 7px 7px;position:absolute;top:0;left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:3px}.mini-notch i{width:2px;height:2px;border-radius:50%;background:var(--color)}.mini-notch b{width:10px;height:1px;background:#8a8f9b;border-radius:2px}.mini-window{display:block;position:absolute;left:8px;right:8px;top:26px;padding:9px 9px 10px;background:#101219;border-radius:0 0 10px 10px;box-shadow:0 12px 24px #07091045}.mini-bar{display:flex;align-items:center;justify-content:space-between;font-size:8px;font-weight:600}.mini-bar i{width:3px;height:3px;border-radius:50%;background:var(--color);display:inline-block;margin:0 0 1px 2px}.mini-time{font-size:5px;color:#9b9faa;font-weight:400;display:inline-flex;align-items:center;gap:2px}.mini-time svg{width:6px;height:6px}.mini-tabs{display:flex;align-items:center;gap:3px;margin:9px 0;font-size:5px;color:#a6a9b5}.mini-tabs>span{padding:3px 4px;border-radius:3px}.mini-tabs>span:first-child{background:color-mix(in srgb,var(--color) 12%,#101219);color:var(--color)}.mini-body{display:grid;grid-template-columns:1.15fr 1fr;gap:7px}.mini-slider{display:block;background:#191c23;border:1px solid #ffffff0b;border-radius:5px;padding:6px;margin-bottom:4px}.mini-label{display:flex;align-items:center;gap:4px;font-size:5px;color:#c1c4cc}.mini-label svg{width:7px;height:7px;color:var(--color)}.mini-label b{margin-left:auto;font-size:5px;font-weight:400;color:#9298a5}.mini-track{height:3px;background:#3a3e48;border-radius:5px;display:block;margin-top:6px}.mini-track i{display:block;width:64%;height:100%;background:var(--color);border-radius:inherit}.mini-slider:last-child .mini-track i{width:78%}.mini-quick{display:grid;grid-template-columns:1fr 1fr;gap:4px}.mini-quick>span{padding:7px 5px;background:#191c23;border:1px solid #ffffff0b;border-radius:5px;font-size:5px;color:#c1c4cc;display:flex;flex-direction:column;gap:5px}.mini-quick svg{width:9px;height:9px;color:var(--color)}.mini-player{display:flex;align-items:center;justify-content:space-between;margin-top:4px;border:1px solid #ffffff0b;padding:4px 5px;border-radius:5px;background:color-mix(in srgb,var(--color) 5%,#191c23)}.mini-player>span{font-size:5px;color:#acb2be}.mini-play{display:grid;place-items:center;width:13px;height:13px;border-radius:50%;background:var(--color);color:var(--dark)}.mini-play svg{width:6px;height:6px}.preview-section{margin-top:36px}.preview-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:15px}.preview-label{font-size:15px;font-weight:500;letter-spacing:-.2px}.preview-label span{color:var(--accent)}.preview-detail{display:block;font-size:11px;color:var(--muted);font-weight:400;letter-spacing:0;margin-top:6px}.preview-actions{display:flex;gap:6px}.small-button{background:#191c24;border:1px solid #ffffff0c;color:#c9cdd5;border-radius:8px;padding:8px 11px;display:inline-flex;align-items:center;gap:7px;font-size:11px;white-space:nowrap;min-height:34px}.small-button:hover{background:#252a34;color:#f0f0ed}.small-button svg{width:13px;height:13px}.stage{border:1px solid #ffffff18;border-radius:15px;overflow:hidden;position:relative;background:linear-gradient(125deg,#414650,#262c36 55%,#353b45);min-height:280px;box-shadow:0 20px 70px #0002}.stage::before{content:'';height:7px;display:block;background:#090b10;border-bottom:1px solid #ffffff0b}.stage iframe{display:block;width:100%;height:400px;border:0;background:transparent;transition:height .18s ease}.stage-notice{position:absolute;bottom:16px;left:18px;right:18px;color:#c7cbd38f;font-size:10px;pointer-events:none}.stage-notice span{float:right}.stage.is-idle .stage-notice{color:#e0e3eab0}.palette-strip{display:flex;align-items:center;gap:5px;padding:14px 0}.palette-strip button{width:28px;height:28px;padding:5px;border:1px solid transparent;border-radius:50%;background:none}.palette-strip button:hover{background:#ffffff0b}.palette-strip button[aria-pressed=true]{border-color:var(--color)}.palette-strip i{display:block;width:100%;height:100%;background:var(--color);border-radius:50%}.palette-strip>span{font-size:10px;color:var(--muted);margin-left:auto}.footnote{padding-top:19px;margin-top:6px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:10px;color:#848b98;line-height:1.7}.footnote span:last-child{color:#a5acb8}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.stage.fullscreen{position:fixed;inset:18px;z-index:10;max-width:1200px;margin:auto;border-radius:16px;background:linear-gradient(125deg,#414650,#262c36 55%,#353b45)}.stage.fullscreen iframe{height:calc(100% - 7px)!important}.fullscreen-close{position:absolute;right:14px;bottom:14px;z-index:2}.stage.fullscreen .stage-notice{bottom:24px}.stage.fullscreen .stage-notice span{display:none}.veil{position:fixed;inset:0;background:#000b;backdrop-filter:blur(8px);z-index:9}.error{color:#e7c8c8;font-size:12px;padding:20px;text-align:center}
+    @media(max-width:950px){.palette-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.mini-scene{height:172px}.mini-window{left:10px;right:10px;top:28px}.mini-bar{font-size:9px}.mini-tabs{font-size:6px}.mini-label,.mini-label b,.mini-quick>span,.mini-player>span{font-size:6px}.mini-slider{padding:7px}.mini-quick>span{padding:8px 6px}.mini-player{padding:5px}}
+    @media(max-width:620px){main{padding:24px 18px 30px}header{padding-bottom:27px}.eyebrow{font-size:9px;letter-spacing:1px}h1{font-size:32px;letter-spacing:-1.2px}.intro{margin-bottom:22px}.intro p{font-size:12px}.palette-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.mini-scene{height:164px}.mini-window{left:8px;right:8px;padding:8px}.mini-tabs{gap:1px;margin:8px 0}.mini-tabs>span{padding:3px}.card-caption{padding:13px 11px}.preview-section{margin-top:29px}.preview-heading{align-items:flex-start;flex-wrap:wrap;gap:13px}.preview-actions{margin-left:auto}.small-button{font-size:10px;padding:8px 10px}.preview-label{font-size:14px}.stage{min-height:250px}.stage-notice{font-size:9px;left:13px;bottom:13px}.stage-notice span{display:none}.footnote{display:block}.footnote span{display:block;margin-top:4px}.stage.fullscreen{inset:8px}.palette-strip>span{font-size:9px}.mini-time{font-size:5px}}
+    .mini-body{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}.mini-body>span{min-width:0}.mini-quick>span{min-width:0;overflow:hidden;white-space:nowrap}.mini-player>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mini-play{flex-shrink:0}.stage{min-height:140px}.stage.fullscreen{inset:auto 18px;top:50%;transform:translateY(-50%);max-height:calc(100dvh - 36px)}.stage.fullscreen iframe{height:var(--frame-height,400px)!important;max-height:calc(100dvh - 43px)}.stage.fullscreen .stage-notice{right:175px}.stage.fullscreen .fullscreen-close{font-size:10px;padding:7px 9px}
+    @media(max-width:365px){main{padding-inline:12px}.mini-scene{height:146px}.mini-window{left:6px;right:6px;padding:7px}.mini-label,.mini-label b,.mini-player>span{font-size:5px}.mini-quick>span{font-size:0;gap:0;min-height:28px;padding:6px 4px;align-items:center;justify-content:center}.mini-label b{display:none}.mini-tabs{font-size:5px}.mini-slider{padding:6px}.card-note{font-size:9px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <main>
+    <header><span class="brand">Yuta<i aria-hidden="true"></i></span><span class="eyebrow">Accent studies / 01</span></header>
+    <section class="intro"><h1>A little more you.</h1><p>Compare all five accents in the menu you know. Lavender is the default; you can switch colors anytime in Settings.</p></section>
+    <div id="palette-grid" class="palette-grid" aria-label="Accent color comparisons"></div>
+    <section class="preview-section" aria-labelledby="preview-heading">
+      <div class="preview-heading">
+        <h2 id="preview-heading" class="preview-label" style="margin:0">Previewing <span id="palette-name">Lavender</span><small class="preview-detail" id="palette-description">Soft violet gives Yuta a little more character.</small></h2>
+        <div class="preview-actions"><button id="toggle-menu" class="small-button" type="button" disabled>Close notch</button><button id="expand-stage" class="small-button" type="button" aria-label="Enlarge interactive preview">Larger view ↗</button></div>
+      </div>
+      <div id="stage" class="stage">
+        <iframe id="live-preview" title="Interactive Yuta accent preview" src="./index.html?accent-study=1"></iframe>
+        <p id="preview-error" class="error" hidden>The interactive preview could not load. The color comparisons above are still available.</p>
+        <div class="stage-notice">Try the tabs, or close it to see the idle notch.<span>Windows features use demo data.</span></div>
+        <button id="close-fullscreen" class="small-button fullscreen-close" type="button" hidden>Back to comparison</button>
+      </div>
+      <div id="palette-strip" class="palette-strip" aria-label="Switch preview accent"><span>Color comparison · choose in Settings</span></div>
+    </section>
+    <footer class="footnote"><span>Same dark surface. Five accents, available in Settings.</span><span>Ice blue · Lavender · Rose · Amber · Porcelain</span></footer>
+  </main>
+  <div id="veil" class="veil" hidden></div>
+  <div id="status" class="sr-only" role="status" aria-live="polite"></div>
+  <script>
+    const palettes = [
+      {id:'ice',name:'Ice blue',color:'#acd4f5',ink:'#172a3b',note:'Clear & cool',description:'Cool and crisp, with a little more energy.'},
+      {id:'lavender',name:'Lavender',color:'#c2b6ec',ink:'#2a2243',note:'Soft & distinct',description:'Soft violet gives Yuta a little more character.'},
+      {id:'rose',name:'Rose',color:'#e4b2c2',ink:'#402330',note:'Warm & personal',description:'A muted rose that feels warm against the dark surface.'},
+      {id:'amber',name:'Amber',color:'#dfc18e',ink:'#382b18',note:'Quiet warmth',description:'A restrained golden tone, warm without being bright.'},
+      {id:'porcelain',name:'Porcelain',color:'#d8d9d3',ink:'#292d2b',note:'Almost monochrome',description:'A soft off-white for the most understated version.'}
+    ];
+    const icons = {
+      volume:'<path d="M11 5 6 9H3v6h3l5 4V5Zm4 3a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',
+      sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4 19 5"/>',
+      wifi:'<path d="M2 8a16 16 0 0 1 20 0M5 12a11 11 0 0 1 14 0m-11 4a6 6 0 0 1 8 0"/><circle cx="12" cy="20" r=".7"/>',
+      bluetooth:'<path d="M7 7 17 17l-5 5V2l5 5L7 17"/>',
+      clock:'<circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/>',
+      play:'<path d="m8 4 12 8-12 8Z" fill="currentColor" stroke="none"/>',
+      check:'<path d="m5 12 4 4L19 6"/>'
+    };
+    const svg = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]}</svg>`;
+    function miniMarkup(){return `<span class="mini-scene" aria-hidden="true"><span class="mini-notch"><i></i><b></b></span><span class="mini-window"><span class="mini-bar"><span>Yuta<i></i></span><span class="mini-time">${svg('clock')} 09:41</span></span><span class="mini-tabs"><span>Controls</span><span>Today</span><span>Stats</span><span>Apps</span></span><span class="mini-body"><span><span class="mini-slider"><span class="mini-label">${svg('volume')}Volume<b>64%</b></span><span class="mini-track"><i></i></span></span><span class="mini-slider"><span class="mini-label">${svg('sun')}Brightness<b>78%</b></span><span class="mini-track"><i></i></span></span></span><span><span class="mini-quick"><span>${svg('wifi')}Wi-Fi</span><span>${svg('bluetooth')}Bluetooth</span></span><span class="mini-player"><span>Focus</span><span class="mini-play">${svg('play')}</span></span></span></span></span></span>`;}
+    const grid = document.getElementById('palette-grid');
+    const strip = document.getElementById('palette-strip');
+    for(const p of palettes){
+      const card = document.createElement('button');
+      card.className='palette-card';card.type='button';card.dataset.palette=p.id;card.style.setProperty('--color',p.color);card.style.setProperty('--dark',p.ink);
+      card.setAttribute('aria-label',`Preview ${p.name}`);card.setAttribute('aria-pressed',String(p.id==='lavender'));
+      card.innerHTML=miniMarkup()+`<span class="card-caption"><span><span class="card-name">${p.name}</span><span class="card-note">${p.note}</span></span><span class="swatch">${svg('check')}</span></span>`;
+      card.addEventListener('click',()=>selectPalette(p.id));grid.append(card);
+      const dot=document.createElement('button');dot.type='button';dot.dataset.palette=p.id;dot.style.setProperty('--color',p.color);dot.setAttribute('aria-label',`Preview ${p.name}`);dot.setAttribute('aria-pressed',String(p.id==='lavender'));dot.title=p.name;dot.innerHTML='<i aria-hidden="true"></i>';dot.addEventListener('click',()=>selectPalette(p.id));strip.insertBefore(dot,strip.lastElementChild);
+    }
+    const frame=document.getElementById('live-preview');
+    const stage=document.getElementById('stage');
+    const toggle=document.getElementById('toggle-menu');
+    let selected=palettes.find(p=>p.id==='lavender'),frameReady=false,expanded=true,rootObserver,resizeObserver,frameStyle;
+    function accentCss(p){return `
+      :root{--accent:${p.color}!important;--accent-ink:${p.ink}!important;--sage:${p.color}!important;--sage-ink:${p.ink}!important;--lilac:${p.color}!important;--accent-hover:color-mix(in srgb,${p.color} 82%,white)!important;--accent-soft:color-mix(in srgb,${p.color} 12%,#101219)!important;--accent-raised:color-mix(in srgb,${p.color} 12%,#191c23)!important;--accent-border:color-mix(in srgb,${p.color} 24%,transparent)!important;--accent-art:color-mix(in srgb,${p.color} 24%,#191c23)!important}
+      html{background:transparent!important}body.preview{padding:0 16px!important;min-height:100vh;background:transparent!important;overflow-x:hidden;align-items:center;justify-content:flex-start}body.preview:before{display:none!important}#preview-caption,#preview-footer{display:none!important}.preview .yuta{box-shadow:0 20px 45px #0003!important}.preview .yuta.expanded{margin:0!important;border-top:0;border-top-left-radius:0!important;border-top-right-radius:0!important;min-height:initial!important}.preview .yuta.collapsed{margin:0!important}.tabs button[aria-selected=true]{background:color-mix(in srgb,${p.color} 12%,#101219);color:${p.color}}.primary,.inline-form button,.segmented button.selected,.day.selected{background:${p.color};color:${p.ink}}.primary:hover{background:color-mix(in srgb,${p.color} 82%,white)}.primary.peach{background:${p.color};color:${p.ink}}.day.selected span,.day.selected .has-event{color:${p.ink}}.media-card{background:linear-gradient(115deg,color-mix(in srgb,${p.color} 10%,#191c23),#191c23);border-color:color-mix(in srgb,${p.color} 13%,transparent)}.album-art{background:color-mix(in srgb,${p.color} 20%,#191c23);color:${p.color}}.media-info>span{color:#adb3bf}.color-0,.app-avatar{color:${p.color};background:color-mix(in srgb,${p.color} 12%,#191c23)}.clip-row.active{background:color-mix(in srgb,${p.color} 10%,#191c23)}.presets button.selected{background:color-mix(in srgb,${p.color} 13%,#191c23);color:${p.color}}.timer-ring{background:conic-gradient(${p.color} calc(var(--progress)*1%),#272a32 0)}.timer-ring small{color:${p.color}}.pill-signal,.brand-dot{background:${p.color}}.pill.running .pill-signal{background:${p.color}}.wordmark{letter-spacing:-.8px}.panel{scrollbar-color:#484d58 transparent}
+      @keyframes accent-menu-in{from{opacity:.5;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}.accent-menu-enter{animation:accent-menu-in .18s ease-out}@media(prefers-reduced-motion:reduce){.accent-menu-enter{animation:none}}
+    `;}
+    function selectPalette(id){
+      selected=palettes.find(p=>p.id===id)||palettes.find(p=>p.id==='lavender');
+      document.documentElement.style.setProperty('--accent',selected.color);document.documentElement.style.setProperty('--ink',selected.ink);
+      document.getElementById('palette-name').textContent=selected.name;document.getElementById('palette-description').textContent=selected.description;
+      document.querySelectorAll('[data-palette]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.palette===selected.id)));
+      if(frameStyle)frameStyle.textContent=accentCss(selected);
+      document.getElementById('status').textContent=`Previewing ${selected.name}. No app settings have changed.`;
+    }
+    function synchronizeFrame(){
+      if(!frameReady)return;
+      const doc=frame.contentDocument,root=doc?.querySelector('#yuta');if(!root)return;
+      if(!root.classList.contains('notch'))root.classList.add('notch');
+      const brand=root.querySelector('.wordmark');if(brand?.firstChild?.nodeType===3&&brand.firstChild.nodeValue.trim()!=='Yuta')brand.firstChild.nodeValue='Yuta';
+      const nextExpanded=root.dataset.expanded==='true';
+      if(nextExpanded&&!expanded){root.classList.remove('accent-menu-enter');void root.offsetWidth;root.classList.add('accent-menu-enter');}
+      expanded=nextExpanded;toggle.textContent=expanded?'Close notch':'Open notch';toggle.setAttribute('aria-expanded',String(expanded));stage.classList.toggle('is-idle',!expanded);
+      const frameHeight=`${Math.max(140,Math.ceil(root.getBoundingClientRect().height+54))}px`;
+      frame.style.height=frameHeight;stage.style.setProperty('--frame-height',frameHeight);
+    }
+    frame.addEventListener('load',()=>{
+      try{
+        const doc=frame.contentDocument,root=doc?.querySelector('#yuta');if(!root)throw new Error('Preview interface missing');
+        frameStyle=doc.createElement('style');frameStyle.dataset.accentStudy='true';frameStyle.textContent=accentCss(selected);doc.head.append(frameStyle);
+        frameReady=true;toggle.disabled=false;
+        rootObserver=new MutationObserver(synchronizeFrame);rootObserver.observe(root,{attributes:true,attributeFilter:['class','data-expanded'],childList:true,subtree:false});
+        resizeObserver=new ResizeObserver(synchronizeFrame);resizeObserver.observe(root);
+        doc.querySelector('[data-action="navigate"][data-tab="Controls"]')?.click();
+        doc.addEventListener('keydown',event=>{if(event.key==='Escape'&&stage.classList.contains('fullscreen'))setFullscreen(false);});
+        synchronizeFrame();
+      }catch(error){document.getElementById('preview-error').hidden=false;console.error(error);}
+    });
+    toggle.addEventListener('click',()=>{
+      if(!frameReady)return;const doc=frame.contentDocument;doc.querySelector(expanded?'[data-action="collapse"]':'[data-action="expand"]')?.click();synchronizeFrame();
+    });
+    let previousFocus;
+    function setFullscreen(value){
+      if(value)previousFocus=document.activeElement;
+      stage.classList.toggle('fullscreen',value);document.getElementById('veil').hidden=!value;document.getElementById('close-fullscreen').hidden=!value;document.body.style.overflow=value?'hidden':'';
+      if(value)document.getElementById('close-fullscreen').focus();else previousFocus?.focus();
+      frame.contentWindow?.dispatchEvent(new Event('resize'));synchronizeFrame();
+    }
+    document.getElementById('expand-stage').addEventListener('click',()=>setFullscreen(true));document.getElementById('close-fullscreen').addEventListener('click',()=>setFullscreen(false));document.getElementById('veil').addEventListener('click',()=>setFullscreen(false));
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&stage.classList.contains('fullscreen'))setFullscreen(false);});
+    window.addEventListener('pagehide',()=>{rootObserver?.disconnect();resizeObserver?.disconnect();});
+  </script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+name: Bug report
+description: Report a reproducible problem in Yuta.
+title: '[Bug] '
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Use sample data. Remove private clipboard contents, file paths, and account details before attaching anything. For vulnerabilities, use Security > Report a vulnerability.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include what you expected and what you observed.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: A short sequence that reproduces the problem from a fresh launch.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Windows and display
+      placeholder: Windows 11, ARM64 or x64, 200% scale, one display
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Yuta revision
+      description: Commit hash or build identifier.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Relevant browser/media player, sanitized screenshots, or a minimal error message.

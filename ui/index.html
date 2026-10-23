@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Yuta</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./idle-preview.css">
+  <link rel="stylesheet" href="./home.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <div id="preview-caption" hidden><span class="preview-brand">Yuta<span>●</span></span><h1>Desktop preview</h1><p>Try the menu, notch, and activity states.</p><div class="preview-hint">Interactive preview <span>Windows features use demo data here</span></div></div>
+  <main id="yuta" class="yuta" aria-label="Yuta personal menu"></main>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <dialog id="dialog"></dialog>
+  <div id="preview-footer" hidden><span>Made for your Windows desktop.</span><span>Hover to open · <span data-preview-hotkey>Alt + Space</span> in the Windows app · Esc to tuck away</span></div>
+</body>
+</html>

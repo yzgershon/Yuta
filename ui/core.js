@@ -1,0 +1,10 @@
+export const uid = () => crypto.randomUUID();
+export const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export const bytes = (value, precision=1) => { if(value==null||!Number.isFinite(Number(value)))return 'Unavailable'; const n=Number(value); if(n<1024)return `${Math.round(n)} B`; const k=Math.min(4,Math.floor(Math.log(n)/Math.log(1024)));return `${(n/1024**k).toFixed(precision)} ${['B','KB','MB','GB','TB'][k]}`; };
+export const timerRemaining = (timer, now=Date.now()) => timer?.running ? Math.max(0,Math.ceil((timer.endsAt-now)/1000)) : Math.max(0,timer?.remaining ?? 1500);
+export const timeText = seconds => `${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;
+export const dateKey = date => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+export const weekDays = (date=new Date()) => {const first=new Date(date);first.setDate(first.getDate()-((first.getDay()+6)%7));return Array.from({length:7},(_,i)=>{const d=new Date(first);d.setDate(first.getDate()+i);return d;});};
+export function parseTargets(text){const targets=text.split('\n').map(x=>x.trim()).filter(Boolean);if(!targets.length)throw new Error('Add at least one website, app, or folder.');if(targets.length>12)throw new Error('A routine can open up to 12 destinations.');for(const t of targets){if(/[\u0000-\u001f]/.test(t)||(!/^https?:\/\/[^\s]+$/i.test(t)&&!/^([a-z]:\\|\\\\|uwp:)/i.test(t)))throw new Error('Use an https website or a full Windows path, one per line.');}return targets;}
+export function filterClips(items,query,type){const q=query.toLowerCase().trim();return items.filter(x=>(type==='all'||x.type===type)&&(`${x.label} ${x.text}`).toLowerCase().includes(q)).sort((a,b)=>Number(b.pinned)-Number(a.pinned));}
+export function weatherLabel(code){if(code===0)return 'Clear sky';if(code<=3)return 'Partly cloudy';if(code<=48)return 'Fog';if(code<=67)return 'Rain';if(code<=77)return 'Snow';if(code<=82)return 'Showers';if(code<=86)return 'Snow showers';return 'Thunderstorms';}

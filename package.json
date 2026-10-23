@@ -1,0 +1,27 @@
+{
+  "name": "yuta-windows",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/core.test.mjs",
+    "test:ui": "playwright test",
+    "preview": "node scripts/test-server.mjs",
+    "docs:capture": "node scripts/capture-docs.mjs",
+    "icons": "node scripts/icons.mjs"
+  },
+  "devDependencies": {
+    "@phosphor-icons/core": "^2.1.1",
+    "@playwright/test": "^1.64.1"
+  },
+  "description": "A personal Windows notch for music, clipboard, apps, and everyday tools.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yzgershon/Yuta.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yzgershon/Yuta/issues"
+  },
+  "homepage": "https://github.com/yzgershon/Yuta#readme"
+}

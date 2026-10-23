@@ -1,0 +1,24 @@
+name: Feature or design suggestion
+description: Propose a useful change to Yuta.
+title: '[Idea] '
+labels: [enhancement]
+body:
+  - type: textarea
+    id: task
+    attributes:
+      label: What are you trying to do?
+      description: Describe the routine or friction you want to improve.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Proposed behavior
+      description: Explain how the change would help, including a concrete example.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or references
+      description: Optional. Share non-private examples or other approaches you considered.

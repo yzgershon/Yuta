@@ -1,0 +1,2 @@
+import {defineConfig} from '@playwright/test';
+export default defineConfig({testDir:'./tests',testMatch:'*.spec.js',testIgnore:['**/workbench/**','**/layout-lab/**'],workers:1,timeout:30000,use:{baseURL:'http://127.0.0.1:4179',headless:true,channel:'msedge',viewport:{width:1280,height:960}},webServer:{command:'node scripts/test-server.mjs',url:'http://127.0.0.1:4179',reuseExistingServer:false},reporter:'list'});
