@@ -33,6 +33,23 @@ foreach ($notice in @(
     }
     if (-not $found) { throw "Missing dependency notice: $($notice[0])" }
 }
+$deps = Get-Content -LiteralPath (Join-Path $app 'Yuta.deps.json') -Raw | ConvertFrom-Json
+foreach ($pack in @($deps.libraries.PSObject.Properties.Name | Where-Object { $_ -like 'runtimepack.*' })) {
+    $relative = $pack.Substring('runtimepack.'.Length).ToLowerInvariant()
+    $found = $false
+    foreach ($folder in $assets.packageFolders.PSObject.Properties.Name) {
+        $source = Join-Path $folder $relative
+        if (-not (Test-Path -LiteralPath $source)) { continue }
+        $texts = @(Get-ChildItem -LiteralPath $source -File | Where-Object { $_.Name -match '^(LICENSE(\.TXT)?|NOTICE(\.TXT)?|THIRD-PARTY-NOTICES(\.TXT)?)$' })
+        foreach ($file in $texts) {
+            $name = ($relative -replace '/', '-') + '-' + $file.Name
+            Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $licenses $name)
+            $found = $true
+        }
+        if ($found) { break }
+    }
+    if (-not $found) { throw "Missing runtime-pack license: $pack" }
+}
 $commit = (& git -C $repo rev-parse HEAD)
 if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve the packaged source commit.' }
 @{ version=$version; runtime=$Runtime; commit=$commit } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $app 'release-info.json') -Encoding UTF8
