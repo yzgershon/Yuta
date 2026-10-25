@@ -53,14 +53,14 @@ test('picture browsing retains decoded images and selection through quick reopen
 
 test('background app refresh preserves the active search and text selection',async({page})=>{
  await useNativeBridge(page);
- await page.getByRole('tab',{name:'Home',exact:true}).click();await page.getByRole('button',{name:'All apps',exact:true}).click();
- const search=page.locator('#search');
+ await page.getByRole('tab',{name:'Home',exact:true}).click();await page.getByRole('button',{name:'Edit pinned apps',exact:true}).click();
+ const search=page.locator('#pin-search');
  await search.fill('Visual');
  await search.evaluate(input=>{input.setSelectionRange(2,4);window.__searchInput=input;});
  await page.evaluate(()=>window.__nativeFixture.emit('apps',[...window.__nativeFixture.apps,{id:'new',name:'Visual companion',target:'C:\\Apps\\companion.exe',kind:'Application'}]));
  await expect(search).toBeFocused();await expect(search).toHaveValue('Visual');
  expect(await search.evaluate(input=>({same:input===window.__searchInput,start:input.selectionStart,end:input.selectionEnd}))).toEqual({same:true,start:2,end:4});
- await expect(page.locator('.launcher-row')).toHaveCount(2);
+ await expect(page.locator('.pin-choice')).toHaveCount(2);
  await page.keyboard.type('XX');await expect(search).toHaveValue('ViXXal');
  expect(await page.evaluate(()=>window.__yutaErrors)).toEqual([]);
 });
@@ -72,8 +72,8 @@ test('an unsaved to-do survives unrelated updates after focus moves away',async(
  await page.getByRole('button',{name:'Next week',exact:true}).click();
  await expect(draft).not.toBeFocused();
  await expect(draft).toHaveValue('Keep this thought while I check next week');
- await page.getByRole('tab',{name:'Home',exact:true}).click();await page.getByRole('button',{name:'All apps',exact:true}).click();
- await page.getByRole('tab',{name:'Today',exact:true}).click();
+ await page.getByRole('tab',{name:'Home',exact:true}).click();await page.getByRole('button',{name:'Edit pinned apps',exact:true}).click();
+ await page.getByRole('button',{name:'Cancel',exact:true}).click();await page.getByRole('tab',{name:'Today',exact:true}).click();
  await expect(draft).toHaveValue('Keep this thought while I check next week');
  await page.getByRole('button',{name:'Add task',exact:true}).click();
  await expect(page.getByText('Keep this thought while I check next week',{exact:true})).toBeVisible();

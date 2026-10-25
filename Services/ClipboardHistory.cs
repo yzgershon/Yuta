@@ -10,6 +10,7 @@ public sealed record ClipItem(string Id, string Type, string Text, string? Image
 
 public sealed class ClipboardHistory
 {
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string?> _thumbnails = new();
     private readonly string _path;
     private uint _sequence;
     public bool Enabled { get; set; }
@@ -23,6 +24,37 @@ public sealed class ClipboardHistory
             catch { /* Unreadable encrypted data stays untouched until a successful capture. */ }
         }
         _sequence = Native.GetClipboardSequenceNumber();
+    }
+    // Keep original images for paste, but send small, cached previews to Home.
+    // Decoding happens off the UI thread; repeated media updates never resend
+    // full-resolution clipboard images to the WebView.
+    public Task<List<ClipItem>> ReadUiItemsAsync()
+    {
+        var snapshot = Items.ToArray();
+        var ids = snapshot.Select(x => x.Id).ToHashSet();
+        foreach (var key in _thumbnails.Keys) if (!ids.Contains(key)) _thumbnails.TryRemove(key, out _);
+        return Task.Run(() => snapshot.Select(item => item.Type != "image" ? item : item with
+        { Image = _thumbnails.GetOrAdd(item.Id, _ => Thumbnail(item.Image)) }).ToList());
+    }
+    internal static string? Thumbnail(string? data)
+    {
+        try
+        {
+            if (data is null) return null;
+            using var input = new MemoryStream(Convert.FromBase64String(data[(data.IndexOf(',') + 1)..]));
+            using var original = Image.FromStream(input);
+            var factor = Math.Min(1d, Math.Min(160d / original.Width, 128d / original.Height));
+            using var preview = new Bitmap(Math.Max(1, (int)Math.Round(original.Width * factor)), Math.Max(1, (int)Math.Round(original.Height * factor)));
+            using (var g = Graphics.FromImage(preview))
+            {
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                g.DrawImage(original, new Rectangle(0, 0, preview.Width, preview.Height));
+            }
+            using var output = new MemoryStream(); preview.Save(output, ImageFormat.Png);
+            return "data:image/png;base64," + Convert.ToBase64String(output.ToArray());
+        }
+        catch { return null; }
     }
     public bool Capture()
     {

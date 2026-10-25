@@ -1,10 +1,12 @@
 param(
     [ValidateSet('win-arm64','win-x64')][string]$Runtime = 'win-x64',
-    [ValidateSet('self-test','performance-test','smoke-test')][string]$Mode = 'self-test'
+    [ValidateSet('self-test','performance-test','smoke-test')][string]$Mode = 'self-test',
+    [string]$Directory = ''
 )
 $ErrorActionPreference = 'Stop'
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$directory = Join-Path $repo "release\yuta\$Runtime"
+if (-not $Directory) { $Directory = Join-Path $repo "release\yuta\$Runtime" }
+$directory = [IO.Path]::GetFullPath($Directory)
 $exe = Join-Path $directory 'Yuta.exe'
 if (-not (Test-Path -LiteralPath $exe)) { throw "Build $Runtime first with scripts/build.ps1." }
 $testProcess = Start-Process -FilePath $exe -ArgumentList "--$Mode" -WorkingDirectory $directory -WindowStyle Hidden -PassThru
@@ -25,12 +27,12 @@ switch ($Mode) {
         Write-Output "$($result.checks.Count) native interaction checks passed."
     }
     'smoke-test' {
-        foreach ($section in @('home','today','stats','clipboard','apps','wallpaper','settings')) {
+        foreach ($section in @('home','today','stats','wallpaper','routines','settings')) {
             $layout = Get-Content -LiteralPath (Join-Path $directory "smoke\$section.json") -Raw | ConvertFrom-Json | ConvertFrom-Json
             if ($layout.overflow -or $layout.scrollNeeded -or @($layout.errors).Count) { throw "Layout failed: $section" }
         }
         $cold = Get-Content -LiteralPath (Join-Path $directory 'smoke\cold-resume.json') -Raw | ConvertFrom-Json
         if ($cold.suspended -or -not $cold.expanded -or -not $cold.webVisible) { throw 'Cold resume failed.' }
-        Write-Output 'Seven panels and cold resume passed.'
+        Write-Output 'Six panels and cold resume passed.'
     }
 }

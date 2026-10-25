@@ -14,6 +14,8 @@ WebView2 is distinct from the Edge browser. Microsoft documents its runtime requ
 
 ## Portable builds
 
+For ready-to-run ARM64 and x64 ZIPs, see [Install Yuta](INSTALL.md). Building from source is optional.
+
 Run from a PowerShell terminal at the repository root:
 
 ```powershell
@@ -24,6 +26,15 @@ Run from a PowerShell terminal at the repository root:
 Build the architectures sequentially; they share intermediate project output. The result is `release\yuta\<runtime>\Yuta.exe` with its supporting files. For an SDK outside PATH, pass `-Dotnet 'C:\path\to\dotnet.exe'`.
 
 The build script uses a self-contained .NET publish. It does not install Yuta, register startup, replace another copy, or restart a running instance. Quit a copy running from the build's destination before rebuilding that destination. The root `Start Yuta.cmd` selects the matching built architecture.
+
+To make clean release ZIPs with install instructions, license notices, source commit metadata, and SHA-256 sidecars:
+
+```powershell
+.\scripts\package.ps1 -Runtime win-x64
+.\scripts\package.ps1 -Runtime win-arm64
+```
+
+Commit the source first. Each command publishes into a fresh staging directory and writes `release/downloads/Yuta-<version>-<runtime>.zip`; it refuses to overwrite an existing archive. The version is read from `Yuta.csproj`. Both scripts accept `-Dotnet` for an SDK outside PATH. Extract a ZIP to test it, then pass `-Directory <extracted-Yuta-folder>` to `test-native.ps1` so diagnostic outputs do not enter the released archive.
 
 ## Tests
 
@@ -43,14 +54,14 @@ On Windows on ARM, replace `win-x64` with `win-arm64`.
 | Suite | Coverage |
 | --- | --- |
 | Core | Timer arithmetic, title handling, escaping, destination validation, calendar, and filtering. |
-| Browser | Navigation, search, retained focus and drafts, media races, hotkeys, hover intent, responsive layout, and persistence through a simulated native bridge. |
+| Browser | Navigation, clipboard paste/delete, pin editing, retained focus and drafts, media races, compact-player transitions, hotkeys, hover intent, fixed-frame scrolling, and persistence through a simulated native bridge. |
 | Native fixtures | Profile migration, DPAPI clipboard storage, hotkeys, hover timing, geometry, idle rendering, media state, visibility, and obstruction policy. |
 | Native performance | Real window transitions, rapid reversals, fixed browser viewport, lifecycle, and cached integration reads. |
-| Native smoke | Offscreen captures of seven panels, JavaScript errors, overflow, warm reopening, idle suspension, and cold resuming. |
+| Native smoke | Offscreen captures of six panels, JavaScript errors, overflow, warm reopening, idle suspension, and cold resuming. |
 
 The native test modes use isolated profiles. UI test modes disable mutating system actions; browser tests do not execute Windows power or media commands. `Yuta.exe --network-test` is separate and explicitly makes weather and speed-test requests. Result files are written beside the tested executable.
 
-The [Windows checks workflow](../.github/workflows/ci.yml) runs core/browser tests, builds both architectures, and executes x64 native fixtures on a Windows runner. Hosted checks do not establish behavior across every graphics driver, display scaling setting, browser accessibility provider, or media player.
+The [Windows checks workflow](../.github/workflows/ci.yml) runs core/browser tests, packages both architectures, retains ZIP/checksum artifacts, and executes x64 native fixtures from the extracted ZIP on a Windows runner. Hosted checks do not establish behavior across every graphics driver, display scaling setting, browser accessibility provider, or media player.
 
 ## Browser preview
 
@@ -67,7 +78,7 @@ Open `http://127.0.0.1:4179`. This is a UI preview with sample data. It cannot c
 npm.cmd run docs:capture
 ```
 
-This renders `ui/` at 2x pixel density with a deterministic clock and fictional app, clipboard, weather, task, and media data. It writes `docs/images/home.png` and `docs/images/today.png`. It never opens a real user profile. See [Media](MEDIA.md) for generated product artwork.
+This renders `ui/` at 2x pixel density with a deterministic clock and fictional app, clipboard, weather, task, and media data. It writes `docs/images/home.png`, `today.png`, and `media.png`. It never opens a real user profile. See [Media](MEDIA.md) for generated product artwork.
 
 ## Troubleshooting
 

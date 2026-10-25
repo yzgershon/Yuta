@@ -74,7 +74,7 @@ test('a shortcut being saved cannot be cancelled into a false unchanged state',a
 });
 
 test('native conflict keeps the previous shortcut and native key capture does not toggle the menu',async({page})=>{
- await page.setViewportSize({width:900,height:640});
+ await page.setViewportSize({width:760,height:366});
  await useNativeBridge(page);
  const button=await openRecorder(page);
  await page.evaluate(()=>{window.__nativeFixture.hotkeyConflict=true;});

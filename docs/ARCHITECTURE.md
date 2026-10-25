@@ -23,11 +23,15 @@ flowchart LR
 | Navigation, retained DOM, and interaction state | `ui/app.js` |
 | Home composition | `ui/home.js`, `ui/home.css` |
 | Media rendering and optimistic transport state | `ui/media.js`, media handlers in `ui/app.js` |
+| Compact media view, artwork palette, and shared panel frame | `ui/media.css`, `ui/media-palette.js`, `ui/panels.css` |
+| Local audio-level sampling and amplitude envelope | `Services/AudioLevelService.cs`, `Services/AudioEnvelope.cs` |
 | Native/demo protocol adapters | `ui/bridge.js` |
 
 ## Interaction design
 
 The browser viewport stays fixed during opening and closing. Native clipping animates the visible bounds, avoiding repeated responsive layout work on every frame. Rapid reversals continue from the current geometry. The native idle surface uses display-density-aware rendering and transparent antialiased edges.
+
+Full views share a 760 × 366 logical-pixel frame; the media-only view is 400 × 224. A generation-based layout-ready handshake prevents the host from revealing a stale intermediate viewport. Opening takes 480 ms and closing takes 260 ms; content fades/translates without a scale transform. `NotchGeometry.cs` and `ui/notch-path.js` share the extended shoulder shape for native and browser surfaces.
 
 Expanded panels are retained and patched instead of rebuilt wholesale. Keys preserve focused fields, selection, drafts, scroll positions, and decoded images. Hardware reads do not block navigation. Media transport has immediate optimistic feedback, ordered commands, and rollback when the player rejects an action.
 

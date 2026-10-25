@@ -183,30 +183,32 @@ public sealed class MediaSessionService : IDisposable
     }
     private static bool IsPlaying(GlobalSystemMediaTransportControlsSession session)
     {
-        try { return session.GetPlaybackInfo().PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing; }
+        try { return session.GetPlaybackInfo()?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing; }
         catch { return false; }
     }
     private static MediaSnapshot ReadPlayback(GlobalSystemMediaTransportControlsSession session, MediaSnapshot snapshot)
     {
         var playback = session.GetPlaybackInfo();
+        // A disappearing browser/player session can briefly return no WinRT info.
+        if (playback is null) return new MediaSnapshot { Revision = snapshot.Revision };
         var controls = playback.Controls;
         var timeline = session.GetTimelineProperties();
         var now = DateTimeOffset.UtcNow;
         var playing = playback.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
         var rate = playback.PlaybackRate ?? 1;
         if (!double.IsFinite(rate) || rate < 0) rate = 1;
-        var duration = Math.Max(0, (timeline.EndTime - timeline.StartTime).TotalSeconds);
-        var position = ProjectPosition((timeline.Position - timeline.StartTime).TotalSeconds, duration,
+        var duration = timeline is null ? 0 : Math.Max(0, (timeline.EndTime - timeline.StartTime).TotalSeconds);
+        var position = timeline is null ? 0 : ProjectPosition((timeline.Position - timeline.StartTime).TotalSeconds, duration,
             timeline.LastUpdatedTime, now, playing, rate);
-        var source = session.SourceAppUserModelId;
+        var source = session.SourceAppUserModelId ?? "";
         return snapshot with
         {
             Available = true, Source = source, SourceName = FriendlySource(source), Playing = playing,
             Position = position, Duration = duration, UpdatedAt = now.ToUnixTimeMilliseconds(), PlaybackRate = rate,
-            CanPlay = controls.IsPlayEnabled, CanPause = controls.IsPauseEnabled,
-            CanToggle = controls.IsPlayPauseToggleEnabled || (playing ? controls.IsPauseEnabled : controls.IsPlayEnabled),
-            CanNext = controls.IsNextEnabled, CanPrevious = controls.IsPreviousEnabled,
-            CanSeek = controls.IsPlaybackPositionEnabled && duration > 0
+            CanPlay = controls?.IsPlayEnabled == true, CanPause = controls?.IsPauseEnabled == true,
+            CanToggle = controls?.IsPlayPauseToggleEnabled == true || (playing ? controls?.IsPauseEnabled == true : controls?.IsPlayEnabled == true),
+            CanNext = controls?.IsNextEnabled == true, CanPrevious = controls?.IsPreviousEnabled == true,
+            CanSeek = controls?.IsPlaybackPositionEnabled == true && duration > 0
         };
     }
     internal static double ProjectPosition(double position, double duration, DateTimeOffset updated, DateTimeOffset now, bool playing, double rate)

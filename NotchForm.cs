@@ -12,11 +12,17 @@ public sealed partial class NotchForm : Form
     private const string Origin = "https://yuta.local";
     // Preserve the original control and type sizes. Short displays scroll the
     // content area instead of shrinking the entire interface.
-    private const int PanelWidth = 900;
+    private const int PanelWidth = 760;
+    private const int MediaWidth = 400, MediaHeight = 224;
+    private const int OpenDuration = 480, CloseDuration = 260;
     private readonly bool _smoke;
     private readonly bool _performance = Environment.GetCommandLineArgs().Contains("--performance-test");
     private readonly Store _store;
     private readonly SystemServices _system = new();
+    private readonly ConnectionService _connections = new();
+    private readonly AppIconService _appIcons = new();
+    private readonly AudioLevelService _audioLevels = new();
+    private readonly System.Windows.Forms.Timer _audioUi = new() { Interval = 16 };
     private readonly Launcher _launcher;
     private readonly Wallpapers _wallpapers;
     private readonly ClipboardHistory _clipboard;
@@ -44,7 +50,12 @@ public sealed partial class NotchForm : Form
     private IntPtr _previousWindow;
     private Size _from, _to;
     private Size _visualSize;
-    private int _panelHeight = 452;
+    private int _panelHeight = 366;
+    private bool _mediaOnly, _presentationWaiting;
+    private int _presentationEpoch;
+    private MediaSnapshot _currentMedia = new();
+    private int ExpandedWidth => _mediaOnly ? MediaWidth : PanelWidth;
+    private int ExpandedHeight => _mediaOnly ? MediaHeight : _panelHeight;
     private bool _reducedMotion;
     private long _animationStarted;
     private int _animationDuration = 280;
@@ -61,7 +72,7 @@ public sealed partial class NotchForm : Form
         _pill.TopMost = !smoke;
         Controls.Add(_web); Size = IdleSize(); _visualSize = Size;
         _web.Size = PanelSize(PanelWidth, _panelHeight); PositionWindow();
-        _pill.MouseUp += (_, e) => { if (e.Button == MouseButtons.Left && !_contextMenuOpen) Expand(true); };
+        _pill.MouseUp += (_, e) => { if (e.Button == MouseButtons.Left && !_contextMenuOpen) OpenFirst(); };
         _pill.MouseEnter += (_, _) =>
         {
             if (_expanded || _hoverRequiresExit || _contextMenuOpen || !Setting("openOnHover", true)) return;
@@ -75,16 +86,16 @@ public sealed partial class NotchForm : Form
         _pointerWatch.Tick += (_, _) =>
         {
             if (!_expanded) { _pointerWatch.Stop(); return; }
-            if (_retraction.Observe(CursorInsideMenu(), _dialogOpen || _webDialogOpen || _contextMenuOpen || _hotkeyRecording || _animation.Enabled || Control.MouseButtons != MouseButtons.None, Environment.TickCount64)) Expand(false);
+            if (_retraction.Observe(CursorInsideMenu(), _dialogOpen || _webDialogOpen || _contextMenuOpen || _hotkeyRecording || _presentationWaiting || _animation.Enabled || Control.MouseButtons != MouseButtons.None, Environment.TickCount64)) Expand(false);
         };
         _idleSuspend.Tick += async (_, _) => { _idleSuspend.Stop(); await SuspendWebAsync(); };
         Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         _tray = new NotifyIcon { Text = "Yuta · " + Hotkey.Parse(Setting("hotkey", Hotkey.Default)).Label, Icon = Icon ?? SystemIcons.Application, Visible = !smoke };
         InitializeVisibilityMenu();
-        _tray.DoubleClick += (_, _) => Expand(true);
+        _tray.DoubleClick += (_, _) => OpenFirst();
         _animation.Tick += (_, _) => Animate();
         _foreground.Tick += (_, _) => ForegroundTick();
-        _clipboardRetry.Tick += (_, _) => { if (_clipboard.Capture()) { _clipboardRetry.Stop(); Emit("clipboard", _clipboard.Items); } else if (++_clipRetries >= 4) _clipboardRetry.Stop(); };
+        _clipboardRetry.Tick += (_, _) => { if (_clipboard.Capture()) { _clipboardRetry.Stop(); _ = EmitClipboardAsync(); } else if (++_clipRetries >= 4) _clipboardRetry.Stop(); };
         _timerAlarm.Tick += (_, _) => { CheckTimer(); UpdatePill(); };
         _system.MediaChanged += MediaChanged;
         _devices.Notice += ActivityNotice;
@@ -113,7 +124,7 @@ public sealed partial class NotchForm : Form
             core.NewWindowRequested += (_, e) => e.Handled = true;
             core.PermissionRequested += (_, e) => e.State = CoreWebView2PermissionState.Deny;
             core.WebMessageReceived += Receive;
-            core.NavigationCompleted += async (_, e) => { if (!e.IsSuccess) return; _ready = true; if (_performance) await PerformanceAsync(); else if (_smoke) await SmokeAsync(); else { await Task.Delay(200); Emit("expanded", _expanded); if (!_expanded) await SuspendWebAsync(); } };
+            core.NavigationCompleted += async (_, e) => { if (!e.IsSuccess) return; _ready = true; if (_performance) await PerformanceAsync(); else if (_smoke) await SmokeAsync(); else { await Task.Delay(200); if (_expanded && _presentationWaiting) EmitPresentation(); else if (!_expanded) { Emit("expanded", false); await SuspendWebAsync(); } } };
             core.Navigate(Origin + "/index.html?native=1");
             ResizePanel(IdleWidth, IdleHeight, false);
             if (!_smoke)
@@ -123,6 +134,9 @@ public sealed partial class NotchForm : Form
                 UpdateShortcutLabel();
                 Native.AddClipboardFormatListener(Handle); _foreground.Start(); _timerAlarm.Start();
                 _devices.CheckPower(); _ = _devices.InitializeAsync();
+                _audioLevels.Start();
+                _audioUi.Tick += (_, _) => { var changed = _pill.SetAudioLevels(_audioLevels.Latest); if (changed) UpdateIdleActivityGeometry(); };
+                _audioUi.Start();
             }
             _ = _system.InitializeAsync();
             if (!_performance) _ = _system.InitializeMediaAsync();
@@ -137,11 +151,13 @@ public sealed partial class NotchForm : Form
     }
     protected override void WndProc(ref Message m)
     {
-        if (m.Msg == 0x802A) Expand(true);
+        if (m.Msg == 0x802A) OpenFirst();
         if (m.Msg == 0x0312 && _hotkeyBinding is { Registered: true } binding && m.WParam.ToInt32() == binding.Id)
         {
             if (_hotkeyRecording) Emit("hotkeyCaptured", binding.Current.Shortcut);
-            else { _previousWindow = Native.GetForegroundWindow(); Expand(!_expanded); }
+            else if (!_expanded) OpenFirst();
+            else if (_mediaOnly) Expand(true);
+            else Expand(false);
             return;
         }
         if (m.Msg == 0x031D && _clipboard.Enabled) { _clipRetries = 0; _clipboardRetry.Start(); }
@@ -194,10 +210,10 @@ public sealed partial class NotchForm : Form
             _hover.Stop(); _hoverIntent.Reset(); return;
         }
         var scale = _pill.RenderScale;
-        if (_hoverIntent.Observe(new PointF(point.X / scale, point.Y / scale), Control.MouseButtons != MouseButtons.None, Environment.TickCount64)) Expand(true);
+        if (_hoverIntent.Observe(new PointF(point.X / scale, point.Y / scale), Control.MouseButtons != MouseButtons.None, Environment.TickCount64)) OpenFirst();
     }
     private Size IdleSize() => PanelSize(IdleWidth, IdleHeight);
-    private void RepositionPanel() => ResizePanel(_expanded ? PanelWidth : IdleWidth, _expanded ? _panelHeight : IdleHeight, false);
+    private void RepositionPanel() => ResizePanel(_expanded ? ExpandedWidth : IdleWidth, _expanded ? ExpandedHeight : IdleHeight, false);
     private bool CursorInsideMenu()
     {
         var point = PointToClient(Cursor.Position);
@@ -255,7 +271,7 @@ public sealed partial class NotchForm : Form
         Size = new(Math.Max(_from.Width, target.Width), Math.Max(_from.Height, target.Height));
         PositionWindow();
         _animationStarted = Environment.TickCount64;
-        _animationDuration = _expanded ? 280 : 210;
+        _animationDuration = _expanded ? OpenDuration : CloseDuration;
         if (_from != _to && animate && !_reducedMotion && SystemInformation.IsMenuAnimationEnabled && (!_smoke || _performance)) _animation.Start(); else FinishAnimation();
     }
     private void Animate()
@@ -263,8 +279,8 @@ public sealed partial class NotchForm : Form
         var t = Math.Min(1, (Environment.TickCount64 - _animationStarted) / (double)_animationDuration);
         // The shoulders spread ahead of the body. No viewport resizing or layout
         // animation is needed, and rapid reversal continues from the visible shape.
-        var widthEase = _expanded ? 1 - Math.Pow(1 - t, 4) : t * t * (3 - 2 * t);
-        var heightEase = _expanded ? 1 - Math.Pow(1 - t, 3) : widthEase;
+        var widthEase = _expanded ? 1 - Math.Pow(1 - t, 3) : t * t * (3 - 2 * t);
+        var heightEase = _expanded ? 1 - Math.Pow(1 - t, 2.6) : widthEase;
         _visualSize = new((int)Math.Round(_from.Width + (_to.Width - _from.Width) * widthEase), (int)Math.Round(_from.Height + (_to.Height - _from.Height) * heightEase)); ApplyRegion(_visualSize);
         if (t == 1) FinishAnimation();
     }
@@ -280,28 +296,54 @@ public sealed partial class NotchForm : Form
         }
         EnsureOverlayOnTop();
     }
-    private void Expand(bool value)
+    private void OpenFirst() => Expand(true, !_expanded && _currentMedia.Available && _currentMedia.Playing);
+    private void Expand(bool value, bool mediaOnly = false)
     {
         _hover.Stop(); _hoverIntent.Reset();
         if (value) _userHidden = false;
-        if (_expanded == value) { if (value && !Visible) { Show(); PositionWindow(); } return; }
+        if (_expanded == value && (!value || _mediaOnly == mediaOnly)) return;
+        var epoch = ++_presentationEpoch;
+        _presentationWaiting = false;
         _idleSuspend.Stop();
         if (value && !_expanded) { var foreground = Native.GetForegroundWindow(); if (foreground != Handle && foreground != _pill.Handle && foreground != IntPtr.Zero) _previousWindow = foreground; }
         if (value && _pill.Visible) { _visualSize = _pill.Size; Size = _pill.Size; }
         _expanded = value;
+        _mediaOnly = value && mediaOnly;
         _explicitOpen = value && _visibilitySuppressed;
         _retraction.Reset(value && !_smoke && CursorInsideMenu());
         if (value)
         {
-            ResizePanel(PanelWidth, _panelHeight);
-            _web.CoreWebView2?.Resume(); _web.Visible = true; _web.BringToFront();
-            if (!Visible) Show(); _pill.Hide();
-            EnsureOverlayOnTop();
-            if (!_smoke) _pointerWatch.Start();
+            _animation.Stop();
+            _presentationWaiting = true;
+            _web.CoreWebView2?.Resume();
+            // Negotiate the final viewport and DOM while the old silhouette is
+            // retained. Showing before this acknowledgement flashed stale layout.
+            _web.Size = PanelSize(ExpandedWidth, ExpandedHeight);
+            EmitPresentation();
+            _ = CancelUnpreparedOpenAsync(epoch);
         }
-        else { _pointerWatch.Stop(); ResizePanel(IdleWidth, IdleHeight); _idleSuspend.Start(); }
-        Emit("expanded", value);
-        if (value && !_smoke) { Activate(); _web.Focus(); }
+        else { _pointerWatch.Stop(); ResizePanel(IdleWidth, IdleHeight); _idleSuspend.Start(); Emit("expanded", false); }
+    }
+    private void EmitPresentation() => Emit("expanded", new { value = true, view = _mediaOnly ? "media" : "full", epoch = _presentationEpoch, media = _currentMedia });
+    private async Task CancelUnpreparedOpenAsync(int epoch)
+    {
+        await Task.Delay(4000);
+        if (!IsDisposed && !Disposing && _presentationWaiting && epoch == _presentationEpoch)
+        {
+            Program.Log(new TimeoutException("The menu did not prepare its opening frame."));
+            Expand(false);
+        }
+    }
+    private void PresentPrepared(int epoch)
+    {
+        if (!_expanded || !_presentationWaiting || epoch != _presentationEpoch) return;
+        _presentationWaiting = false;
+        ResizePanel(ExpandedWidth, ExpandedHeight);
+        _web.Visible = true; _web.BringToFront();
+        if (!Visible) Show();
+        _pill.Hide(); EnsureOverlayOnTop();
+        Emit("presentationShown", epoch);
+        if (!_smoke) { _pointerWatch.Start(); Activate(); _web.Focus(); }
     }
     private async Task SuspendWebAsync()
     {
@@ -331,10 +373,17 @@ public sealed partial class NotchForm : Form
         }
         UpdateIdleActivityGeometry();
     }
+    private int _clipboardRevision;
+    private async Task EmitClipboardAsync()
+    {
+        var revision = ++_clipboardRevision;
+        var items = await _clipboard.ReadUiItemsAsync();
+        if (revision == _clipboardRevision) Emit("clipboard", items);
+    }
     private void MediaChanged(MediaSnapshot snapshot)
     {
         if (!IsHandleCreated || IsDisposed || Disposing || _allowClose) return;
-        try { BeginInvoke(() => { if (IsDisposed || Disposing) return; _pill.SetMedia(snapshot); UpdateIdleActivityGeometry(); Emit("media", snapshot); }); }
+        try { BeginInvoke(() => { if (IsDisposed || Disposing) return; _currentMedia = snapshot; _audioLevels.SetMedia(snapshot); _pill.SetMedia(snapshot); UpdateIdleActivityGeometry(); Emit("media", snapshot); }); }
         catch (InvalidOperationException) { /* The window closed while a session event arrived. */ }
     }
     private void Emit(string name, object? data) { if (_ready && !IsDisposed && !Disposing && !_allowClose) _web.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(new { @event = name, data }, Store.JsonOptions)); }
@@ -366,7 +415,7 @@ public sealed partial class NotchForm : Form
         string Text(string key) => args[key]?.GetValue<string>() ?? "";
         switch (method)
         {
-            case "bootstrap": return new { state = _store.Data, apps = _launcher.Apps, clips = _clipboard.Items, hotkey = _hotkey, monitors = Screen.AllScreens.Select((s, i) => new { id = i, name = $"Display {i + 1}{(s.Primary ? " · primary" : "")}" }) };
+            case "bootstrap": return new { state = _store.Data, apps = _launcher.Apps, clips = await _clipboard.ReadUiItemsAsync(), hotkey = _hotkey, monitors = Screen.AllScreens.Select((s, i) => new { id = i, name = $"Display {i + 1}{(s.Primary ? " · primary" : "")}" }) };
             case "save":
                 if (Text("key") == "settings" && args["value"]?["hotkey"] is JsonValue requestedHotkey && requestedHotkey.GetValue<string>() != Setting("hotkey", Hotkey.Default))
                     throw new ArgumentException("Use the keyboard shortcut recorder to change this setting.");
@@ -380,7 +429,14 @@ public sealed partial class NotchForm : Form
                     UpdatePill();
                 }
                 if (Text("key") == "timer") UpdatePill(); return result;
-            case "expand": Expand(args["value"]?.GetValue<bool>() ?? true); return true;
+            case "expand":
+                if (args["value"]?.GetValue<bool>() == false) Expand(false);
+                else if (args["full"]?.GetValue<bool>() == true || _expanded) Expand(true);
+                else OpenFirst();
+                return true;
+            case "presentationReady":
+                _reducedMotion = _performance ? _reducedMotion : args["reducedMotion"]?.GetValue<bool>() ?? false;
+                PresentPrepared(args["epoch"]?.GetValue<int>() ?? -1); return true;
             case "hotkeyRecord": _hotkeyRecording = args["active"]?.GetValue<bool>() ?? false; _recordedKey = 0; return true;
             case "hotkeySet": return SetShortcut(Text("shortcut"));
             case "dialogState": _webDialogOpen = args["open"]?.GetValue<bool>() ?? false; return true;
@@ -388,8 +444,17 @@ public sealed partial class NotchForm : Form
             case "resize":
                 var panelHeight = Math.Clamp(args["height"]!.GetValue<int>(), 220, 800);
                 _reducedMotion = args["reducedMotion"]?.GetValue<bool>() ?? false;
-                if (_expanded && (panelHeight != _panelHeight || _web.Size != PanelSize(PanelWidth, panelHeight))) ResizePanel(PanelWidth, panelHeight, !_reducedMotion);
+                if (_mediaOnly) return true;
+                if (_expanded && !_presentationWaiting && (panelHeight != _panelHeight || _web.Size != PanelSize(PanelWidth, panelHeight))) ResizePanel(PanelWidth, panelHeight, !_reducedMotion);
                 _panelHeight = panelHeight; return true;
+            case "connections": return await _connections.ReadAsync();
+            case "connectionSet": if (_smoke) throw new InvalidOperationException("Connection changes are disabled in tests."); return await _connections.SetAsync(Text("kind"), args["enabled"]?.GetValue<bool>() ?? false);
+            case "appIcons":
+                var iconIds = args["ids"]!.AsArray().Take(48).Select(x => x!.GetValue<string>()).ToHashSet();
+                var iconItems = _launcher.Apps.Where(a => iconIds.Contains(a.Id)).Concat(_store.Data["files"]!.AsArray()
+                    .Where(f => iconIds.Contains(f?["id"]?.GetValue<string>() ?? ""))
+                    .Select(f => new LaunchItem(f!["id"]!.GetValue<string>(), f["name"]!.GetValue<string>(), f["target"]!.GetValue<string>(), f["kind"]?.GetValue<string>() ?? "File"))).ToArray();
+                return await _appIcons.ReadAsync(iconItems);
             case "controls": return await _system.ControlsAsync();
             case "volume": if (!_smoke) await _system.VolumeAsync(args["value"]!.GetValue<int>()); return true;
             case "mute": if (!_smoke) await _system.MuteAsync(); return true;
@@ -398,7 +463,7 @@ public sealed partial class NotchForm : Form
             // Performance fixtures drive the idle player directly. Reading a
             // real session here would subscribe to live events and overwrite
             // their paused/playing state while measuring a transition.
-            case "media": return _performance ? new MediaSnapshot() : await _system.MediaAsync();
+            case "media": return _performance ? _currentMedia : await _system.MediaAsync();
             case "mediaAction": return !_smoke && await _system.MediaAction(Text("action"), args["position"]?.GetValue<double>(), Text("source"), Text("trackTitle"));
             case "stats": if (_statsBusy) return null; _statsBusy = true; try { return await _system.StatsAsync(); } finally { _statsBusy = false; }
             case "weather": return await _system.WeatherAsync(Text("city"), args["fahrenheit"]?.GetValue<bool>() ?? true);
@@ -420,12 +485,13 @@ public sealed partial class NotchForm : Form
                     using var file = new OpenFileDialog { Title = "Choose an app or file", Filter = "Supported files|*.exe;*.lnk;*.pdf;*.txt;*.md;*.docx;*.xlsx;*.pptx;*.png;*.jpg;*.jpeg" }; return file.ShowDialog(this) == DialogResult.OK ? file.FileName : null;
                 }
                 finally { _dialogOpen = false; }
-            case "clipboard": return _clipboard.Items;
-            case "clipCopy": _clipboard.Copy(Text("id")); return true;
-            case "clipPin": _clipboard.Pin(Text("id")); return _clipboard.Items;
-            case "clipRemove": _clipboard.Remove(args["ids"]!.AsArray().Select(x => x!.GetValue<string>())); return _clipboard.Items;
+            case "clipboard": return await _clipboard.ReadUiItemsAsync();
+            case "clipCopy": if (!_smoke) _clipboard.Copy(Text("id")); return true;
+            case "clipPin": _clipboard.Pin(Text("id")); return await _clipboard.ReadUiItemsAsync();
+            case "clipRemove": _clipboard.Remove(args["ids"]!.AsArray().Select(x => x!.GetValue<string>())); return await _clipboard.ReadUiItemsAsync();
             case "copyText": if (Text("text").Length > 100_000) throw new ArgumentException("Text is too long."); if (!_smoke) Clipboard.SetText(Text("text")); return true;
             case "clipPaste":
+                if (_smoke) return true;
                 _clipboard.Copy(Text("id"));
                 if (_previousWindow == IntPtr.Zero || !Native.IsWindow(_previousWindow)) throw new InvalidOperationException("Copied. Return to your app and press Ctrl+V.");
                 var destination = _previousWindow; Expand(false);
@@ -479,7 +545,7 @@ public sealed partial class NotchForm : Form
             await _wallpapers.ScanAsync();
             var music = await _system.MediaAsync();
             File.WriteAllText(Path.Combine(dir, "integrations.json"), JsonSerializer.Serialize(new { hardware, controls = controlState, wallpapers = _wallpapers.Items.Count, apps = _launcher.Apps.Count, media = music }, Store.JsonOptions));
-            foreach (var section in new[] { "Home", "Today", "Stats", "Clipboard", "Apps", "Wallpaper", "Settings" })
+            foreach (var section in new[] { "Home", "Today", "Stats", "Wallpaper", "Routines", "Settings" })
             {
                 Emit("navigate", section); await Task.Delay(section == "Stats" ? 2000 : 600);
                 await using var capture = File.Create(Path.Combine(dir, section.ToLowerInvariant() + ".png")); await _web.CoreWebView2.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, capture);
@@ -508,6 +574,7 @@ public sealed partial class NotchForm : Form
         _hotkeyBinding?.Dispose(); Native.RemoveClipboardFormatListener(Handle); _tray.Visible = false; _tray.Dispose();
         _visibilityMenu?.Dispose();
         _pill.Close(); _pill.Dispose();
+        _audioUi.Stop(); _audioUi.Dispose(); _audioLevels.Dispose();
         _system.MediaChanged -= MediaChanged; _system.Dispose();
         _devices.Notice -= ActivityNotice; _devices.Dispose();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= DisplayChanged;

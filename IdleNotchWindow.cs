@@ -133,7 +133,7 @@ internal sealed partial class IdleNotchWindow : Form
         using var labelFont = new Font("Segoe UI Semibold", 8.2f * contentScale, FontStyle.Regular, GraphicsUnit.Pixel);
         var alpha = (int)Math.Round(255 * opacity);
         using var text = new SolidBrush(Color.FromArgb(alpha, 244, 246, 249));
-        using var labelBrush = new SolidBrush(Color.FromArgb(alpha, TimerRunning ? AccentColor : Color.FromArgb(153, 160, 174)));
+        using var labelBrush = new SolidBrush(Color.FromArgb(alpha, TimerRunning ? Color.FromArgb(239, 189, 133) : Color.FromArgb(153, 160, 174)));
         using var format = (StringFormat)StringFormat.GenericTypographic.Clone();
         format.Alignment = StringAlignment.Center; format.LineAlignment = StringAlignment.Center;
         format.FormatFlags |= StringFormatFlags.NoWrap;

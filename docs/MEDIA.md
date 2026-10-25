@@ -1,6 +1,6 @@
 # Repository media
 
-The README combines generated product photographs with captures of Yuta's actual interface. Product photographs are illustrative; the Home and Today captures are the reference for the shipped layout.
+The README combines generated concept photographs from the initial preview with captures of Yuta's current interface. The Home, Today, and compact-player captures are the reference for the shipped layout; the concept photographs are not exact screenshots of 0.2.0.
 
 | Asset | Origin |
 | --- | --- |
@@ -8,6 +8,7 @@ The README combines generated product photographs with captures of Yuta's actual
 | `images/yuta-detail.png` | Built-in image generation, guided by a native music-notch render and the hero art direction. |
 | `images/home.png` | Actual `ui/` rendered at 2x pixel density with fictional content. |
 | `images/today.png` | Actual `ui/` rendered at 2x pixel density with fictional content and a deterministic clock. |
+| `images/media.png` | Actual 400 × 224 compact player rendered at 2x pixel density with the same fictional track. |
 
 Run `npm.cmd run docs:capture` on Windows with Microsoft Edge installed to regenerate the interface captures. The script uses an isolated synthetic bridge and does not access a Windows profile, listening history, clipboard, or personal files. The small sample album illustration is original procedural artwork. Generated hero/detail imagery was produced with the built-in image generation tool, not the API/CLI fallback.
 

@@ -10,7 +10,7 @@ const choices=[
  ['porcelain','Porcelain','rgb(216, 217, 211)','rgb(41, 45, 43)'],
 ];
 
-test('six accents recolor live controls and persist the selected theme across reload',async({page})=>{
+test('personal accents persist while all connections remain blue',async({page})=>{
  await page.goto('/');await page.getByRole('tab',{name:'Today',exact:true}).click();
  await page.getByRole('button',{name:'Settings',exact:true}).click();
  const accents=page.getByRole('group',{name:'Accent color',exact:true});
@@ -22,7 +22,10 @@ test('six accents recolor live controls and persist the selected theme across re
   await page.getByRole('tab',{name:'Home',exact:true}).click();
   await expect(page.getByRole('button',{name:'Wi-Fi settings',exact:true})).toBeEnabled();
   await expect(page.getByRole('tab',{name:'Home',exact:true})).toHaveCSS('color',color);
-  await expect(page.getByRole('button',{name:'Wi-Fi settings',exact:true})).toHaveCSS('color',color);
+  await expect(page.getByRole('button',{name:'Wi-Fi settings',exact:true})).toHaveCSS('color','rgb(18, 26, 35)');
+  const groups=await page.locator('.connection-split.is-on').evaluateAll(els=>els.map(el=>getComputedStyle(el).backgroundColor));
+  expect(new Set(groups).size).toBe(1);expect(groups).toHaveLength(3);
+  for(const group of await page.locator('.connection').all())expect(await group.evaluate(el=>getComputedStyle(el).getPropertyValue('--connection').trim())).toBe('#8cc9ed');
   await page.getByRole('tab',{name:'Wallpaper',exact:true}).click();
   await expect(page.getByRole('button',{name:'Set wallpaper',exact:true})).toHaveCSS('background-color',color);
   await expect(page.getByRole('button',{name:'Set wallpaper',exact:true})).toHaveCSS('color',ink);
@@ -37,7 +40,7 @@ test('six accents recolor live controls and persist the selected theme across re
 });
 
 test('accent choices and unavailable-shortcut warning fit inside full-size native Settings',async({page})=>{
- await page.setViewportSize({width:900,height:640});
+ await page.setViewportSize({width:760,height:366});
  await useNativeBridge(page,{hotkey:false});
  await page.getByRole('button',{name:'Settings',exact:true}).click();
  const accents=page.getByRole('group',{name:'Accent color',exact:true});
@@ -47,8 +50,8 @@ test('accent choices and unavailable-shortcut warning fit inside full-size nativ
   const swatch=accents.getByRole('button',{name,exact:true});
   await expect(swatch).toBeVisible();
   const bounds=await swatch.boundingBox();
-  expect(bounds.x).toBeGreaterThanOrEqual(0);expect(bounds.x+bounds.width).toBeLessThanOrEqual(900);
-  expect(bounds.y+bounds.height).toBeLessThanOrEqual(640);
+  expect(bounds.x).toBeGreaterThanOrEqual(0);expect(bounds.x+bounds.width).toBeLessThanOrEqual(760);
+  expect(bounds.y+bounds.height).toBeLessThanOrEqual(366);
  }
  const layout=await page.locator('.panel').evaluate(panel=>({width:panel.clientWidth,scrollWidth:panel.scrollWidth,height:panel.clientHeight,scrollHeight:panel.scrollHeight}));
  expect(layout.scrollWidth).toBeLessThanOrEqual(layout.width+1);
