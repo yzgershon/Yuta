@@ -46,6 +46,18 @@ foreach ($pack in @($deps.libraries.PSObject.Properties.Name | Where-Object { $_
             Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $licenses $name)
             $found = $true
         }
+        if (-not $found) {
+            # Some targeting packs supply a license URL instead of a text file.
+            $nuspec = Get-ChildItem -LiteralPath $source -Filter '*.nuspec' -File | Select-Object -First 1
+            if ($nuspec) {
+                $metadata = ([xml](Get-Content -LiteralPath $nuspec.FullName -Raw)).package.metadata
+                if ([string]$metadata.licenseUrl -match '^https://') {
+                    $name = ($relative -replace '/', '-') + '-LICENSE-REFERENCE.txt'
+                    @($metadata.id, $metadata.copyright, "License supplied by the upstream package: $($metadata.licenseUrl)") | Set-Content -LiteralPath (Join-Path $licenses $name) -Encoding UTF8
+                    $found = $true
+                }
+            }
+        }
         if ($found) { break }
     }
     if (-not $found) { throw "Missing runtime-pack license: $pack" }
