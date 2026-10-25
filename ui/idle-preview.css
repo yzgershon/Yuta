@@ -7,24 +7,25 @@
 .idle-cover,.idle-notice-icon{position:absolute;left:24px;top:50%;transform:translateY(-50%);width:calc(16px * var(--idle-item-scale));height:calc(16px * var(--idle-item-scale));border-radius:5.3px}
 .idle-cover{object-fit:cover;display:none}
 .is-music .idle-cover{display:block}
-.idle-title{position:absolute;left:56px;right:56px;top:0;height:28px;line-height:28px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;color:#f4f6f9}
+.idle-title{position:absolute;left:56px;right:68px;top:0;height:28px;line-height:28px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;color:#f4f6f9}
 .running:not(.is-notice) .idle-title{visibility:hidden}
-.idle-wave{position:absolute;right:24px;top:50%;transform:translateY(-50%);align-items:center;height:calc(16px * var(--idle-item-scale));gap:calc(1.8px * var(--idle-item-scale));display:none;color:var(--accent)}
-.is-music .idle-wave{display:flex}
-.idle-wave i{display:block;width:calc(1.8px * var(--idle-item-scale));height:calc(12px * var(--idle-item-scale));border-radius:2px;background:currentColor;animation:idle-wave .95s ease-in-out infinite alternate;transform:scaleY(.35)}
-.idle-wave i:nth-child(2){animation-delay:-.35s;animation-duration:.71s}
-.idle-wave i:nth-child(3){animation-delay:-.62s;animation-duration:1.07s}
-.idle-wave i:nth-child(4){animation-delay:-.18s;animation-duration:.83s}
-.idle-wave i:nth-child(5){animation-delay:-.47s;animation-duration:.67s}
-.pill[hidden] .idle-wave i,.pill:not(.is-music) .idle-wave i{animation-play-state:paused}
-.idle-notice-icon{display:none;background:var(--accent);mask:var(--icon) center/contain no-repeat;-webkit-mask:var(--icon) center/contain no-repeat}
-.is-notice .idle-notice-icon{display:block}
-.idle-percent{position:absolute;right:19px;top:0;line-height:28px;color:#9fdcac}
+.idle-wave{position:absolute;right:24px;top:50%;transform:translateY(-50%);align-items:center;height:calc(16px * var(--idle-item-scale));gap:calc(.6px * var(--idle-item-scale));display:none;color:#8bd5bb}
+.is-music .idle-wave,.is-voice .idle-wave{display:flex}
+.idle-wave i{display:block;width:calc(.65px * var(--idle-item-scale));height:calc((1.2px + 14.5px * var(--level,0)) * var(--idle-item-scale));border-radius:2px;flex-shrink:0}
+.idle-notice-icon{display:none;background:#8bd5bb;mask:var(--icon) center/contain no-repeat;-webkit-mask:var(--icon) center/contain no-repeat}
+.is-notice:not(.has-notice-percent) .idle-notice-icon,.is-voice .idle-notice-icon{display:block}
+.idle-percent{position:absolute;right:59px;top:0;line-height:28px;color:#f4f6f9}
 .is-notice .idle-title{right:24px}
-.is-notice.has-notice-percent .idle-title{right:60px}
+.is-notice.has-notice-percent .idle-title{left:24px;right:95px}
+.idle-battery{display:none;position:absolute;right:26px;top:8px;width:25px;height:12px;padding:1.6px;border:.65px solid #b5bec978;background:#b5bec941;border-radius:3px}
+.has-notice-percent .idle-battery{display:block;animation:battery-arrival .22s ease-out both}
+.idle-battery::after{content:"";position:absolute;right:-3px;top:3.4px;width:1.8px;height:4px;border-radius:.7px;background:#b5bec941}
+.idle-battery b{display:block;width:72%;height:100%;background:#96e0a9;border-radius:1.7px;position:relative;overflow:hidden}
+.has-notice-percent .idle-battery b::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,#ffffff55,transparent);animation:battery-sheen .62s ease-out both}
 .activity-examples{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:22px}
 .activity-examples>span{font-size:11px;color:#5d5b68;margin-right:6px}
 .activity-examples button{font-size:11px;padding:7px 11px;color:#383444;background:#ffffff40;border:1px solid #716c8029;border-radius:9px}
 .activity-examples button[aria-pressed=true]{color:#f4f1ff;background:#474053;border-color:#474053}
-@keyframes idle-wave{to{transform:scaleY(1)}}
-@media(prefers-reduced-motion:reduce){.preview .yuta.collapsed,.idle-activity,.pill-content{transition:none}.idle-wave i{animation:none;transform:scaleY(.6)}}
+@keyframes battery-arrival{from{opacity:.35;transform:translateX(2px)}to{opacity:1;transform:translateX(0)}}
+@keyframes battery-sheen{from{transform:translateX(-150%)}to{transform:translateX(150%)}}
+@media(prefers-reduced-motion:reduce){.preview .yuta.collapsed,.idle-activity,.pill-content{transition:none}.idle-wave i{height:calc(1.2px * var(--idle-item-scale))}.has-notice-percent .idle-battery,.has-notice-percent .idle-battery b::after{animation:none}.has-notice-percent .idle-battery b::after{display:none}}

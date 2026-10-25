@@ -70,8 +70,12 @@ internal static class ActivityTests
                 using var idle = new IdleNotchWindow();
                 idle.Configure(new(-12000, -12000, (int)Math.Round(NotchGeometry.ActivityWidth * scale), (int)Math.Round(NotchGeometry.IdleHeight * scale)), scale, attached, "03:12", false);
                 idle.SetMedia(Music());
-                foreach (var view in new[] { "music", "timer-music", "charging", "headphones" })
+                foreach (var view in new[] { "music", "timer-music", "voice", "charging", "headphones" })
                 {
+                    var envelope = new AudioEnvelope();
+                    float[] levels = [], peaks = [.1f, .12f, .11f, .5f, .8f, .4f, .15f, .08f, .3f, .6f, .25f];
+                    for (var i = 0; i < 80; i++) levels = envelope.Sample(peaks[i % peaks.Length]);
+                    idle.SetAudioLevels(new(levels, view == "voice", view == "voice" ? "Discord" : "", true));
                     idle.TimerRunning = view == "timer-music";
                     if (view == "charging") idle.SetNotice(new("power", "Charging", 48), 0);
                     if (view == "headphones") idle.SetNotice(new("audio", "My headphones"), 0);

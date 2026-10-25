@@ -75,12 +75,12 @@ test('an open dialog and held pointer protect the expanded menu from retraction'
  await expect(root).toHaveAttribute('data-expanded','false');
 });
 
-test('every section fits the full-size 900px layout with internal scrolling and usable controls',async({page})=>{
- await page.setViewportSize({width:900,height:450});
+test('every section fits the compact 760px layout with internal scrolling and usable controls',async({page})=>{
+ await page.setViewportSize({width:760,height:366});
  await useNativeBridge(page);
- const sections={Home:452,Today:450,Stats:470,Clipboard:580,Apps:570,Wallpaper:440,Routines:460,Notes:480,Settings:640};
+ const sections={Home:366,Today:366,Stats:366,Wallpaper:366,Routines:366,Settings:366};
  for(const [name,height] of Object.entries(sections)){
-  await page.setViewportSize({width:900,height});
+  await page.setViewportSize({width:760,height});
   await page.evaluate(name=>window.__nativeFixture.emit('navigate',name),name);
   await expect(page.getByRole('tabpanel',{name,exact:true})).toBeVisible();
   if(['Home','Today','Stats','Wallpaper'].includes(name)){
@@ -88,7 +88,7 @@ test('every section fits the full-size 900px layout with internal scrolling and 
    await expect(page.locator('[role=tab][aria-selected=true]')).toHaveCount(1);
   }
   if(name==='Home'){
-   await expect(page.getByRole('group',{name:'Connection settings'}).getByRole('button')).toHaveCount(3);
+   await expect(page.getByRole('group',{name:'Connections'}).getByRole('button')).toHaveCount(6);
    await expect(page.getByRole('button',{name:'Audio settings',exact:true})).toBeEnabled();
    await expect(page.locator('#volume,#brightness,[data-page="notifications"],.app-footer,.battery')).toHaveCount(0);
    const player=await page.locator('.media-card').boundingBox();
@@ -96,7 +96,7 @@ test('every section fits the full-size 900px layout with internal scrolling and 
    const info=await page.locator('.media-info').boundingBox();
    const clipboard=await page.locator('.home-clipboard').boundingBox();
    const apps=await page.locator('.home-apps').boundingBox();
-   await expect(page.locator('.media-card')).toHaveCSS('width','348px');
+   await expect(page.locator('.media-card')).toHaveCSS('width','322px');
    expect(player.height).toBeLessThanOrEqual(215);
    expect(player.x).toBeGreaterThan(clipboard.x+clipboard.width);
    expect(transport.y).toBeGreaterThan(info.y+info.height);
@@ -111,10 +111,11 @@ test('every section fits the full-size 900px layout with internal scrolling and 
   if(name==='Wallpaper')await expect(page.locator('.wallpaper.selected')).toHaveCount(1);
   const layout=await page.evaluate(()=>{
    const panel=document.querySelector('.panel'),tabs=document.querySelector('.tabs'),root=document.querySelector('#yuta');
-   return {pageWidth:document.documentElement.scrollWidth,pageHeight:document.documentElement.scrollHeight,panelWidth:panel.clientWidth,panelScrollWidth:panel.scrollWidth,panelHeight:panel.clientHeight,panelScrollHeight:panel.scrollHeight,panelBottom:panel.getBoundingClientRect().bottom,tabsTop:tabs.getBoundingClientRect().top,rootWidth:root.getBoundingClientRect().width};
+   return {pageWidth:document.documentElement.scrollWidth,pageHeight:document.documentElement.scrollHeight,panelWidth:panel.clientWidth,panelScrollWidth:panel.scrollWidth,panelHeight:panel.clientHeight,panelScrollHeight:panel.scrollHeight,panelBottom:panel.getBoundingClientRect().bottom,tabsTop:tabs.getBoundingClientRect().top,rootWidth:root.getBoundingClientRect().width,rootHeight:root.getBoundingClientRect().height};
   });
-  expect(layout.rootWidth,`${name} menu width`).toBe(900);
-  expect(layout.pageWidth,`${name} page horizontal overflow`).toBeLessThanOrEqual(900);
+  expect(layout.rootWidth,`${name} menu width`).toBe(760);
+  expect(layout.rootHeight,`${name} menu height`).toBe(366);
+  expect(layout.pageWidth,`${name} page horizontal overflow`).toBeLessThanOrEqual(760);
   expect(layout.panelScrollWidth,`${name} panel horizontal overflow`).toBeLessThanOrEqual(layout.panelWidth+1);
   if(['Home','Today','Stats','Wallpaper'].includes(name))expect.soft(layout.panelScrollHeight,`${name} primary panel vertical overflow`).toBeLessThanOrEqual(layout.panelHeight+1);
   expect(layout.pageHeight,`${name} page vertical overflow`).toBeLessThanOrEqual(height);
@@ -122,7 +123,7 @@ test('every section fits the full-size 900px layout with internal scrolling and 
   expect(layout.tabsTop,`${name} tabs at the top`).toBeLessThanOrEqual(12);
  }
  await page.evaluate(()=>window.__nativeFixture.emit('navigate','Today'));
- await page.setViewportSize({width:900,height:450});
+ await page.setViewportSize({width:760,height:366});
  await page.getByLabel('New to-do',{exact:true}).fill('A compact task');
  await page.getByRole('button',{name:'Add task',exact:true}).click();
  await expect(page.getByText('A compact task',{exact:true})).toBeVisible();

@@ -14,18 +14,33 @@ internal sealed partial class IdleNotchWindow
     private string? _artworkKey;
     private IdleNotice? _notice;
     private string _shortTitle = "Music";
-    private long _noticeUntil, _morphStarted;
+    private long _noticeUntil, _noticeStarted, _morphStarted;
     private Rectangle _morphFrom, _morphTo;
     private bool _morphing;
     private bool _reducedMotion;
     private MediaSnapshot? _lastMedia;
     private int _activityFrame, _contentVersion;
     public bool MusicPlaying { get; private set; }
-    public bool HasActivity => MusicPlaying || _notice is not null;
+    private AudioLevels _levels = AudioLevels.Silent;
+    public bool VoiceActive => _levels.VoiceActive;
+    public bool HasActivity => MusicPlaying || VoiceActive || _notice is not null;
+    public bool SetAudioLevels(AudioLevels levels)
+    {
+        var contextChanged = _levels.VoiceActive != levels.VoiceActive || _levels.VoiceApp != levels.VoiceApp;
+        var changed = contextChanged || _levels.Bars.Length != levels.Bars.Length || _levels.Bars.Where((v, i) => (int)(v * 64) != (int)(levels.Bars[i] * 64)).Any();
+        _levels = levels;
+        if (changed && MotionEnabled && (MusicPlaying || VoiceActive))
+        {
+            _contentVersion++; _activityFrame = (_activityFrame + 1) % 10000;
+            if (Visible && !Flattened && _notice is null) RefreshSurface();
+        }
+        if (contextChanged) { _contentVersion++; if (Visible) RefreshSurface(); }
+        return contextChanged;
+    }
     internal int WidthFor(bool attached) => HasActivity || TimerRunning ? NotchGeometry.ActivityWidth : attached ? NotchGeometry.NotchWidth : NotchGeometry.PillWidth;
     internal bool ActivityAnimating => _activityTick.Enabled;
     internal int ActivityFrame => _activityFrame;
-    internal bool ReducedMotion { get => _reducedMotion; set { _reducedMotion = value; UpdateActivityTimer(); } }
+    internal bool ReducedMotion { get => _reducedMotion; set { _reducedMotion = value; _contentVersion++; RefreshSurface(); UpdateActivityTimer(); } }
     private bool MotionEnabled => !_reducedMotion && SystemInformation.IsMenuAnimationEnabled;
 
     private void InitializeActivity()
@@ -44,12 +59,13 @@ internal sealed partial class IdleNotchWindow
                 finally { _configuring = false; }
                 if (t >= 1) _morphing = false;
             }
-            if (!Flattened && MusicPlaying && _notice is null && MotionEnabled) _activityFrame = (_activityFrame + 1) % 10000;
+            _activityFrame = (_activityFrame + 1) % 10000;
             RefreshSurface(); UpdateActivityTimer();
         };
     }
 
-    private void UpdateActivityTimer() => _activityTick.Enabled = Visible && (_morphing || !Flattened && MusicPlaying && _notice is null && MotionEnabled);
+    private bool PowerEntranceActive => _notice?.Kind == "power" && MotionEnabled && Environment.TickCount64 - _noticeStarted < 620;
+    private void UpdateActivityTimer() => _activityTick.Enabled = Visible && (_morphing || !Flattened && PowerEntranceActive);
 
     public void TransitionTo(Rectangle bounds, bool animate)
     {
@@ -92,7 +108,7 @@ internal sealed partial class IdleNotchWindow
 
     public void SetNotice(IdleNotice notice, long now)
     {
-        _notice = notice; _noticeUntil = now + 4500;
+        _notice = notice; _noticeStarted = now; _noticeUntil = now + 4500;
         _contentVersion++; RefreshSurface(); UpdateActivityTimer();
     }
 
@@ -120,13 +136,21 @@ internal sealed partial class IdleNotchWindow
             DrawNotice(g, notice, width, height, scale, contentOpacity);
             return clockOpacity;
         }
-        if (_displayMedia is null) return 1;
+        if (_displayMedia is null && !VoiceActive) return 1;
         var alpha = (int)(255 * contentOpacity);
         var itemScale = scale * NotchGeometry.IdleItemScale;
         var artBounds = new RectangleF(24 * scale, (height - 16 * itemScale) / 2, 16 * itemScale, 16 * itemScale);
         using var artPath = RoundedRect(artBounds, 4 * itemScale);
         var state = g.Save(); g.SetClip(artPath, CombineMode.Intersect);
-        if (_artwork is not null)
+        if (VoiceActive)
+        {
+            using var mic = new Pen(Color.FromArgb(alpha, 139, 213, 187), 1.5f * itemScale) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            var x = artBounds.Left; var y = artBounds.Top;
+            g.DrawArc(mic, x + 5 * itemScale, y + 2 * itemScale, 6 * itemScale, 9 * itemScale, 0, 360);
+            g.DrawArc(mic, x + 2 * itemScale, y + 4 * itemScale, 12 * itemScale, 10 * itemScale, 0, 180);
+            g.DrawLine(mic, x + 8 * itemScale, y + 14 * itemScale, x + 8 * itemScale, y + 16 * itemScale);
+        }
+        else if (_artwork is not null)
         {
             using var attributes = new ImageAttributes();
             var matrix = new ColorMatrix { Matrix33 = contentOpacity }; attributes.SetColorMatrix(matrix);
@@ -146,48 +170,84 @@ internal sealed partial class IdleNotchWindow
         }
         g.Restore(state);
         var waveRight = width - 24 * scale;
-        var waveLeft = waveRight - 14.4f * itemScale;
-        using var wave = new Pen(Color.FromArgb(alpha, AccentColor), 1.8f * itemScale) { StartCap = LineCap.Round, EndCap = LineCap.Round };
-        for (var i = 0; i < 5; i++)
+        var waveLeft = waveRight - (AudioEnvelope.BarCount - 1) * 1.25f * itemScale;
+        using var waveColor = new LinearGradientBrush(new PointF(waveLeft, 0), new PointF(waveRight, 0), Color.White, Color.White)
         {
-            var phase = (Environment.TickCount64 % 600000) * .0065;
-            var bar = 3 + (Math.Sin(phase + i * 1.7) + 1) * 3 + (Math.Sin(phase * .63 + i) + 1) * 1.1;
-            var x = waveLeft + i * 3.6f * itemScale;
+            WrapMode = WrapMode.TileFlipX,
+            InterpolationColors = new ColorBlend
+            {
+                Colors = [Color.FromArgb(alpha, 179, 148, 255), Color.FromArgb(alpha, 86, 182, 255)],
+                Positions = [0, 1]
+            }
+        };
+        using var wave = new Pen(waveColor, .65f * itemScale) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        for (var i = 0; i < AudioEnvelope.BarCount; i++)
+        {
+            var level = i < _levels.Bars.Length && float.IsFinite(_levels.Bars[i]) ? Math.Clamp(_levels.Bars[i], 0, 1) : 0;
+            var bar = 1.2f + (MotionEnabled ? level * 14.5f : 0);
+            var x = waveLeft + i * 1.25f * itemScale;
             g.DrawLine(wave, x, (float)(height - bar * itemScale) / 2, x, (float)(height + bar * itemScale) / 2);
         }
         if (!TimerRunning)
         {
             var left = artBounds.Right + 10 * scale;
-            DrawActivityText(g, _shortTitle, new(left, 0, Math.Max(1, waveLeft - 10 * scale - left), height), scale, contentOpacity);
+            DrawActivityText(g, VoiceActive ? "Mic · " + _levels.VoiceApp : _shortTitle, new(left, 0, Math.Max(1, waveLeft - 10 * scale - left), height), scale, contentOpacity);
         }
         return clockOpacity;
     }
 
     private void DrawNotice(Graphics g, IdleNotice notice, int width, int height, float scale, float opacity)
     {
-        var alpha = (int)(255 * opacity);
-        var saved = g.Save();
-        // Reuse the 22 DIP glyph coordinates at the approved proportional size.
-        g.TranslateTransform(24 * scale, (height - 16 * scale * NotchGeometry.IdleItemScale) / 2);
-        g.ScaleTransform(NotchGeometry.IdleItemScale, NotchGeometry.IdleItemScale);
-        g.TranslateTransform(-21 * scale, -3 * scale);
-        using var pen = new Pen(Color.FromArgb(alpha, notice.Kind == "power" ? Color.FromArgb(159, 220, 172) : AccentColor), 1.6f * scale) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round };
         if (notice.Kind == "power")
         {
-            g.DrawRectangle(pen, 21 * scale, 7 * scale, 15 * scale, 8 * scale);
-            g.DrawLine(pen, 38 * scale, 9 * scale, 38 * scale, 13 * scale);
-            using var fill = new SolidBrush(pen.Color);
-            if (notice.Percent is int percent) g.FillRectangle(fill, 23 * scale, 9 * scale, 11 * scale * Math.Clamp(percent, 0, 100) / 100f, 4 * scale);
+            DrawPowerNotice(g, notice, width, height, scale, opacity);
+            return;
         }
-        else
-        {
-            g.DrawArc(pen, 22 * scale, 4 * scale, 14 * scale, 14 * scale, 180, 180);
-            g.DrawLine(pen, 22 * scale, 11 * scale, 22 * scale, 17 * scale); g.DrawLine(pen, 36 * scale, 11 * scale, 36 * scale, 17 * scale);
-            g.DrawLine(pen, 25 * scale, 12 * scale, 25 * scale, 17 * scale); g.DrawLine(pen, 33 * scale, 12 * scale, 33 * scale, 17 * scale);
-        }
+        var alpha = (int)(255 * opacity);
+        var item = scale * NotchGeometry.IdleItemScale;
+        var saved = g.Save();
+        g.TranslateTransform(24 * scale, (height - 16 * item) / 2);
+        using var pen = new Pen(Color.FromArgb(alpha, 139, 213, 187), 1.6f * item) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round };
+        g.DrawArc(pen, item, item, 14 * item, 14 * item, 180, 180);
+        g.DrawLine(pen, item, 8 * item, item, 14 * item); g.DrawLine(pen, 15 * item, 8 * item, 15 * item, 14 * item);
+        g.DrawLine(pen, 4 * item, 9 * item, 4 * item, 14 * item); g.DrawLine(pen, 12 * item, 9 * item, 12 * item, 14 * item);
         g.Restore(saved);
-        DrawActivityText(g, notice.Title, new(55 * scale, 0, Math.Max(1, width - (notice.Percent.HasValue ? 112 : 79) * scale), height), scale, opacity);
-        if (notice.Percent is int value) DrawActivityText(g, value + "%", new(width - 57 * scale, 0, 40 * scale, height), scale, opacity, StringAlignment.Far);
+        DrawActivityText(g, notice.Title, new(55 * scale, 0, Math.Max(1, width - 79 * scale), height), scale, opacity);
+    }
+
+    private void DrawPowerNotice(Graphics g, IdleNotice notice, int width, int height, float scale, float opacity)
+    {
+        var elapsed = Math.Max(0, Environment.TickCount64 - _noticeStarted);
+        var reveal = MotionEnabled ? 1 - Math.Pow(1 - Math.Clamp(elapsed / 220d, 0, 1), 3) : 1;
+        opacity *= (float)(.35 + .65 * reveal);
+        var alpha = (int)(255 * opacity);
+        DrawActivityText(g, notice.Title, new(24 * scale, 0, Math.Max(1, width - 119 * scale), height), scale, opacity);
+        if (notice.Percent is int value)
+            DrawActivityText(g, Math.Clamp(value, 0, 100) + "%", new(width - 95 * scale, 0, 36 * scale, height), scale, opacity, StringAlignment.Far);
+        var body = new RectangleF(width - 51 * scale, (height - 12 * scale) / 2, 25 * scale, 12 * scale);
+        using var outline = RoundedRect(body, 3 * scale);
+        using var shell = new SolidBrush(Color.FromArgb((int)(65 * opacity), 181, 190, 201));
+        g.FillPath(shell, outline);
+        using var rim = new Pen(Color.FromArgb((int)(120 * opacity), 181, 190, 201), .65f * scale);
+        g.DrawPath(rim, outline);
+        using var tip = RoundedRect(new(body.Right + 1.2f * scale, body.Top + 4 * scale, 1.8f * scale, 4 * scale), .7f * scale);
+        g.FillPath(shell, tip);
+        var inner = RectangleF.Inflate(body, -1.6f * scale, -1.6f * scale);
+        using var innerPath = RoundedRect(inner, 1.7f * scale);
+        var state = g.Save(); g.SetClip(innerPath, CombineMode.Intersect);
+        var fillWidth = inner.Width * Math.Clamp(notice.Percent ?? 0, 0, 100) / 100f;
+        var fillBounds = new RectangleF(inner.X, inner.Y, fillWidth, inner.Height);
+        using var fill = new SolidBrush(Color.FromArgb(alpha, notice.Title == "On battery" ? Color.FromArgb(168, 178, 192) : Color.FromArgb(150, 224, 169)));
+        g.FillRectangle(fill, fillBounds);
+        // One short sheen on arrival; the filled percentage remains truthful.
+        if (MotionEnabled && elapsed < 620 && fillWidth > 0)
+        {
+            g.SetClip(fillBounds, CombineMode.Intersect);
+            var x = inner.Left - 7 * scale + (float)(elapsed / 620d) * (inner.Width + 14 * scale);
+            using var sheen = new LinearGradientBrush(new RectangleF(x, inner.Top, 7 * scale, inner.Height), Color.Transparent, Color.FromArgb((int)(85 * opacity), Color.White), 0f);
+            g.FillRectangle(sheen, x, inner.Top, 7 * scale, inner.Height);
+        }
+        g.Restore(state);
     }
 
     private static void DrawActivityText(Graphics g, string text, RectangleF bounds, float scale, float opacity, StringAlignment alignment = StringAlignment.Near)

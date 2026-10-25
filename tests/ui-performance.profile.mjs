@@ -31,7 +31,7 @@ try{
   function frame(now){summary.frameGaps.push(now-last);last=now;if(sampling)requestAnimationFrame(frame);}
   requestAnimationFrame(frame);
   const start=performance.now();
-  for(let i=0;i<3;i++)for(const name of ['Home','Today','Stats','Wallpaper']){
+  for(let i=0;i<3;i++)for(const name of ['Controls','Today','Stats','Clipboard','Apps','Wallpaper','Power']){
    document.querySelector(`[role=tab][data-tab="${name}"]`).click();await pause(50);
   }
   document.querySelector('[role=tab][data-tab="Wallpaper"]').click();await pause(80);

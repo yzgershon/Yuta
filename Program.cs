@@ -9,6 +9,7 @@ internal static class Program
     static void Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
+        if (args.Contains("--home-probe")) { HomeProbe.RunAsync().GetAwaiter().GetResult(); return; }
         if (args.Contains("--self-test")) { SelfTest.Run(); return; }
         if (args.Contains("--network-test")) { SelfTest.NetworkAsync().GetAwaiter().GetResult(); return; }
         using var mutex = new Mutex(true, "Local\\Perch.PersonalMenu", out var first);

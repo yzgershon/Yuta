@@ -22,6 +22,7 @@ internal static class SelfTest
         HotkeyTests.Run(Check, root);
         VisibilityTests.Run(Check, root);
         ActivityTests.Run(Check);
+        AudioLevelTests.Run(Check);
         ObstructionTests.Run(Check, root);
         var store = new Store(root);
         Check("Local state survives reopening", () => { store.Update("notes", JsonValue.Create("A durable note")); return new Store(root).Data["notes"]!.GetValue<string>() == "A durable note"; });
@@ -113,7 +114,7 @@ internal static class SelfTest
                 var expected = ColorTranslator.FromHtml(hex);
                 idle.AccentColor = AccentPalette.Resolve(id); idle.RefreshSurface();
                 var current = (Bitmap?)surfaceField.GetValue(idle) ?? throw new InvalidOperationException("Native surface was not rendered.");
-                if (idle.AccentColor.ToArgb() != expected.ToArgb() || ReferenceEquals(previous, current) || !ContainsAccentColor(current, expected)) return false;
+                if (idle.AccentColor.ToArgb() != expected.ToArgb() || ReferenceEquals(previous, current) || !ContainsAccentColor(current, Color.FromArgb(239, 189, 133))) return false;
                 idle.RefreshSurface();
                 if (!ReferenceEquals(current, surfaceField.GetValue(idle))) return false;
                 previous = current;

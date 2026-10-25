@@ -37,7 +37,9 @@ App exclusions use executable paths. Website exclusions use the hostname exposed
 
 Smart flattening reads accessibility control types, visibility, and bounding rectangles. It skips browser document branches and does not read page text, take screenshots, or send screen contents to a service. Provider support is not universal. Reads run outside the UI thread with time, depth, and node bounds.
 
-Media metadata and artwork come from Windows media sessions. System statistics come from local Windows counters. Yuta does not request Spotify credentials or publish listening activity.
+Media metadata and artwork come from Windows media sessions. Artwork colors are sampled locally. Music and voice animations read Windows audio-session peak meters and process identities; they do not open a microphone recording stream, capture audio samples, store audio, or transmit audio. Browser voice activity is identified by the browser process, not the meeting tab. System statistics come from local Windows counters. Yuta does not request Spotify credentials or publish listening activity.
+
+The Quick note interface was removed in 0.2.0. Existing notes in older profiles are left intact.
 
 ## Removing local data
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.0 — 2026-10-25
+
+- First public portable downloads for Windows ARM64 and x64, including .NET, install instructions, source commit metadata, and SHA-256 checksums.
+- Compact Home with centered tabs, header power controls, vertical blue connection switches, scrollable clipboard previews, direct paste/delete, and editable app-icon pins.
+- Shared 760 × 366 frame for Home, Today, Stats, Wallpaper, Routines, and Settings; longer content scrolls within each panel.
+- Media-first opening: a 400 × 224 player while music or video is playing, then the full menu on a second expansion. Artwork-derived colors and a curved progress line appear in both players.
+- Live audio-level animation with thin purple/blue bars, microphone-session activity, and refined charging notices. Audio is never recorded.
+- Longer, smoother notch shoulders, 480 ms opening, and a layout-ready handshake to avoid a transient scale jump.
+- Removed the separate clipboard/launcher screens and Quick note UI.
+- Expanded browser/native regression coverage and refreshed sample-data screenshots.
+
+The downloads are unsigned portable builds. WebView2 is required; there is no automatic updater. Source and original assets remain all rights reserved.
+
 ## Public source preview — 2026-10-22
 
 - Attached notch and floating pill with deliberate hover, click, configurable shortcut, and automatic retraction.

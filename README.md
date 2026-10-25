@@ -14,6 +14,7 @@
 </p>
 
 <p align="center">
+  <a href="#download">Download</a> ·
   <a href="#a-home-for-the-things-you-repeat">Explore</a> ·
   <a href="docs/BUILDING.md">Build</a> ·
   <a href="docs/USAGE.md">User guide</a> ·
@@ -23,30 +24,43 @@
 
 Yuta brings music, copied items, app shortcuts, and everyday tools into a small notch at the top of your Windows desktop. Rest your pointer over it, click it, or press **Alt + Space**. Move away and it tucks back into the screen edge.
 
-This is an early public source preview, developed on Windows 11. The repository contains the app and its tests; there is no signed installer or automatic updater yet. The source is public for review with **all rights reserved**. See [LICENSE](LICENSE).
+Yuta is available as a portable Windows 11 app for **x64 and ARM64**. The source is public for review with **all rights reserved**. See [LICENSE](LICENSE).
+
+## Download
+
+| Your computer | Yuta 0.2.0 |
+| --- | --- |
+| Intel / AMD Windows PC | **[Download for Windows x64](https://github.com/yzgershon/Yuta/releases/download/v0.2.0/Yuta-0.2.0-win-x64.zip)** |
+| Snapdragon / Windows on ARM | **[Download for Windows ARM64](https://github.com/yzgershon/Yuta/releases/download/v0.2.0/Yuta-0.2.0-win-arm64.zip)** |
+
+**Extract the ZIP, open the `Yuta` folder, and run `Yuta.exe`.** Keep the whole folder together. Check **Settings → System → About → System type** if you are unsure which download to choose.
+
+.NET is included; [WebView2 Evergreen Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/#download-section) is required. The portable builds are unsigned and do not include an automatic updater. See the [installation and update guide](docs/INSTALL.md), [release notes](https://github.com/yzgershon/Yuta/releases/tag/v0.2.0), and [SHA-256 checksums](https://github.com/yzgershon/Yuta/releases/download/v0.2.0/SHA256SUMS.txt).
 
 ## A Home for the things you repeat
 
-<img src="docs/images/home.png" alt="Actual Yuta Home interface: searchable clipboard on the left, music and pinned app shortcuts on the right" width="100%">
+<img src="docs/images/home.png" alt="Actual Yuta Home interface: blue connection switches, scrollable clipboard previews, artwork-tinted music player, and pinned app icons" width="100%">
 
-Home keeps the frequently used controls together. Search across captured clipboard items, copy a result, open an app, or control the current track. Wi-Fi, Bluetooth, audio settings, and power actions stay within reach without filling the menu with oversized cards.
+Home fits the essentials into a compact 760 × 366 logical-pixel frame. Blue Wi-Fi, Bluetooth, and audio switches sit beside a scrollable clipboard; the artwork-tinted player and pinned app icons share the right column. Power actions stay in the header, with centered navigation and no footer taking up space.
 
 | Tool | What it does |
 | --- | --- |
-| **Music** | Artwork, track and artist, playback controls, and seeking through the active Windows media session. Spotify and other compatible players work without a separate account connection. |
-| **Clipboard** | Opt-in text, link, and image history with search, pins, previews, copying, and pasting. History is encrypted for your Windows account. |
-| **Apps** | Installed apps, files, folders, websites, favorites, and reusable text snippets. **Ctrl + K** opens the full launcher. |
-| **Quick controls** | Small Wi-Fi, Bluetooth, and audio settings shortcuts, plus direct lock, sleep, restart, and shut-down actions. |
+| **Music and video** | Artwork, track and artist, immediate playback feedback, and a curved seek line. The first opening shows a small player while media is playing; a second opens Home. Compatible Windows media sessions work without a Spotify login. |
+| **Clipboard** | Opt-in text, link, and image history with real thumbnails, scrolling, direct paste, and hover-to-delete. History is encrypted for your Windows account. |
+| **Pinned apps** | Launch from app icons. Use the pencil to choose your pins; **Ctrl + K** opens the pin editor. |
+| **Quick controls** | Split Wi-Fi, Bluetooth, and audio buttons: toggle on the left, Windows settings on the right. Direct lock, sleep, restart, and shutdown sit in the header. |
+
+<p align="center"><img src="docs/images/media.png" alt="Actual compact Yuta music player with artwork-derived colors, transport controls, and a curved progress line" width="520"></p>
 
 ## Small when you need space
 
 <img src="docs/images/yuta-detail.png" alt="Generated close-up of Yuta's compact music notch at the top of a Windows display" width="100%">
 
-The idle notch shows the time, a running timer, or music with cover art and animated playback bars. Charging and audio-output changes briefly appear as status notices.
+The idle notch shows the time, a running timer, or music with cover art and thin purple-to-blue bars driven by local audio levels. Active microphone sessions can show voice activity. Charging and audio-output changes briefly appear as status notices.
 
-- **Deliberate opening.** A 450 ms hover with settled pointer movement avoids opening on a quick pass. Click and the configurable keyboard shortcut open immediately.
+- **Deliberate opening.** A 450 ms hover with settled pointer movement avoids opening on a quick pass. Click and the configurable keyboard shortcut also open Yuta. The contour opens smoothly over 480 ms without scaling the text.
 - **Smart flattening.** When supported Windows accessibility controls overlap the idle notch, it contracts into a plain black, four-logical-pixel strip. Detection uses control geometry, not screenshots or a vision model.
-- **Your preferences.** Choose an attached notch or floating pill, a display, and one of six accents. Violet is the default.
+- **Your preferences.** Choose an attached notch or floating pill, a display, and an accent. Violet navigation, blue connection controls, and artwork-based media colors give each function a clear identity.
 - **Visibility control.** Right-click to hide Yuta for an app or a detected website, or pause it for one hour. Resume from the tray.
 
 Accessibility-provider support varies by app. Smart flattening is experimental and can be turned off in Settings.
@@ -55,9 +69,9 @@ Accessibility-provider support varies by app. Smart flattening is experimental a
 
 <img src="docs/images/today.png" alt="Actual Yuta Today interface with a clock, weather, local weekly calendar, focus timer, and to-do list" width="100%">
 
-**Today** holds the clock, city-based weather, local calendar, tasks, and focus timer. **Stats** shows system activity and top processes. **Wallpaper** browses a local image folder. Routines open a saved group of destinations, and Quick note keeps an automatically saved scratchpad.
+**Today** holds the clock, city-based weather, local calendar, tasks, and focus timer. **Stats** shows system activity and top processes. **Wallpaper** browses a local image folder. Routines open a saved group of destinations. Every full-menu view uses the same compact frame, with longer content scrolling inside it.
 
-Calendar events are local. Calendar-account sync, general Bluetooth device batteries, calls, and hotspot activity are not implemented. The [user guide](docs/USAGE.md) covers current behavior and shortcuts.
+Calendar events are local. Calendar-account sync, general Bluetooth device batteries, and hotspot activity are not implemented. Voice activity uses Windows microphone/session meters; it is not a universal call-status detector. Browser calls are identified by browser, not by the individual meeting tab. The [user guide](docs/USAGE.md) covers current behavior and limits.
 
 ## Build on Windows
 
@@ -80,7 +94,7 @@ For prerequisites, test commands, browser preview, and troubleshooting, see [Bui
 
 ## Local data, explicit integrations
 
-Notes, tasks, settings, and routines stay in a local profile. Clipboard recording starts off. Weather requests go to Open-Meteo only when a city is configured; the optional speed test contacts Cloudflare. Yuta has no account service or analytics backend.
+Tasks, settings, and routines stay in a local profile. Clipboard recording starts off. Audio activity reads Windows level meters without opening a recording stream or storing audio. Weather requests go to Open-Meteo only when a city is configured; the optional speed test contacts Cloudflare. Yuta has no account service or analytics backend.
 
 Read the [privacy and storage guide](docs/PRIVACY.md) for exact paths, encryption boundaries, browser-host detection, and network behavior.
 
@@ -93,4 +107,4 @@ Read the [privacy and storage guide](docs/PRIVACY.md) for exact paths, encryptio
 - [Media](docs/MEDIA.md) — artwork provenance and reproducible screenshot captures.
 - [Third-party notices](THIRD_PARTY_NOTICES.md) — dependencies and attribution.
 
-The two product photographs are AI-generated illustrations. Home and Today are captures of the actual UI with fictional sample content. Windows, Spotify, and other product names belong to their respective owners; Yuta is an independent project.
+The two product photographs are AI-generated concept illustrations from the initial preview. Home, Today, and the compact player are captures of the current UI with fictional sample content. Windows, Spotify, and other product names belong to their respective owners; Yuta is an independent project.

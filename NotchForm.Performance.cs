@@ -30,7 +30,7 @@ public sealed partial class NotchForm
                 catch (InvalidOperationException error) when (error.Message == "Power actions are disabled in tests.") { powerBlocked++; }
             }
             checks.Add(("All power actions are blocked in native fixtures without opening a dialog", powerBlocked == 4 && !_dialogOpen));
-            checks.Add(("Approved 900 DIP menu uses native 100 percent scale", _web.ZoomFactor == 1 && _web.Size == PanelSize(900, _panelHeight)));
+            checks.Add(("Compact 760 DIP menu keeps native 100 percent scale", _web.ZoomFactor == 1 && _web.Size == PanelSize(760, _panelHeight)));
             for (var i = 0; i < 5; i++)
             {
                 var before = sizes.Count; Expand(true); await Task.Delay(450);
@@ -43,8 +43,10 @@ public sealed partial class NotchForm
             _hover.Start(); await Task.Delay(200);
             checks.Add(("Hover leaving target does not open later", !_expanded));
             Expand(true); await Task.Delay(400);
-            foreach (var section in new[] { "Home", "Apps", "Wallpaper", "Today", "Stats", "Home", "Settings", "Today" })
+            var beforeTabs = sizes.Count;
+            foreach (var section in new[] { "Home", "Routines", "Wallpaper", "Today", "Stats", "Home", "Settings", "Today" })
             { Emit("navigate", section); await Task.Delay(100); }
+            checks.Add(("Every section keeps Home's 760 by 366 DIP frame without a viewport resize", sizes.Count == beforeTabs && _web.Size == PanelSize(760, 366) && Size == _web.Size));
             for (var i = 0; i < 10; i++) { Expand(i % 2 == 0); await Task.Delay(40); }
             Expand(true); await Task.Delay(800);
             checks.Add(("Rapid reversals settle on expanded geometry", !_animation.Enabled && Size == _visualSize && Size == PanelSize(PanelWidth, _panelHeight) && _web.Size == Size && _web.Location == Point.Empty));
@@ -56,8 +58,8 @@ public sealed partial class NotchForm
             await Task.Delay(350); ResizePanel(PanelWidth, _panelHeight, false);
             _reducedMotion = true; Expand(false);
             checks.Add(("Reduced motion closes immediately into a separate compact surface", !_animation.Enabled && !Visible && !_web.Visible && _pill.Visible && _pill.Size == IdleSize()));
-            Expand(true);
-            checks.Add(("Reduced motion opens immediately", !_animation.Enabled && _web.Visible && Size == PanelSize(PanelWidth, _panelHeight)));
+            Expand(true); await Task.Delay(150);
+            checks.Add(("Reduced motion opens without a size animation after layout is ready", !_presentationWaiting && !_animation.Enabled && _web.Visible && Size == PanelSize(PanelWidth, _panelHeight)));
             _reducedMotion = false;
             // This store belongs to the isolated performance profile. Exercise both
             // idle shapes and reversed transitions without touching the user's settings.
@@ -96,8 +98,8 @@ public sealed partial class NotchForm
             var music = ActivityTests.Music();
             _pill.SetMedia(music); UpdateIdleActivityGeometry(); await Task.Delay(400);
             checks.Add(("Artwork, short title and bars widen without waking the browser", _pill.Size == IdleSize() && _pill.Width == (int)Math.Round(NotchGeometry.ActivityWidth * DeviceDpi / 96d) && !_web.Visible && !Visible && sizes.Count == beforeActivity));
-            var frame = _pill.ActivityFrame; await Task.Delay(140);
-            checks.Add(("Playing music animates only the visible native idle surface", !SystemInformation.IsMenuAnimationEnabled || _pill.ActivityAnimating && _pill.ActivityFrame != frame));
+            var frame = _pill.ActivityFrame; _pill.SetAudioLevels(new([.8f,.6f,.4f,.2f,.1f], false, "", true)); await Task.Delay(140);
+            checks.Add(("Measured audio changes update the native idle surface without an animation loop", !SystemInformation.IsMenuAnimationEnabled || !_pill.ActivityAnimating && _pill.ActivityFrame != frame));
             var beforeFlatten = sizes.Count;
             ApplySmartFlatten(true); await Task.Delay(350);
             checks.Add(("Covered controls flatten into a four-DIP surface with no old invisible hitbox or WebView resize", _pill.Height == (int)(NotchGeometry.FlatHeight * DeviceDpi / 96d) && _pill.ClientSize == _pill.Size && !Visible && !_web.Visible && sizes.Count == beforeFlatten));
@@ -108,7 +110,7 @@ public sealed partial class NotchForm
             Expand(false); await Task.Delay(350);
             checks.Add(("Closing over an obstructed control returns to the flat strip", !_expanded && _pill.Flattened && _pill.Height == (int)(NotchGeometry.FlatHeight * DeviceDpi / 96d) && !_web.Visible));
             ApplySmartFlatten(false); await Task.Delay(350);
-            checks.Add(("Clearing the obstruction restores current music and its normal geometry", !_pill.Flattened && _pill.Size == IdleSize() && _pill.Height == (int)(NotchGeometry.IdleHeight * DeviceDpi / 96d) && (SystemInformation.IsMenuAnimationEnabled ? _pill.ActivityAnimating : !_pill.ActivityAnimating)));
+            checks.Add(("Clearing the obstruction restores current music and its normal geometry", !_pill.Flattened && _pill.Size == IdleSize() && _pill.Height == (int)(NotchGeometry.IdleHeight * DeviceDpi / 96d) && !_pill.ActivityAnimating));
             _pill.SetMedia(music with { Playing = false }); UpdateIdleActivityGeometry(); await Task.Delay(350);
             frame = _pill.ActivityFrame; await Task.Delay(100);
             checks.Add(("Pausing contracts to the clock and stops animation work", _pill.Size == IdleSize() && !_pill.HasActivity && !_pill.ActivityAnimating && frame == _pill.ActivityFrame && sizes.Count == beforeActivity));
@@ -126,7 +128,30 @@ public sealed partial class NotchForm
             _pill.ExpireNotice(Environment.TickCount64 + 5000); UpdateIdleActivityGeometry();
             checks.Add(("An expired notice restores the idle clock geometry", !_pill.HasActivity && _pill.Size == IdleSize() && !_pill.ActivityAnimating));
             _reducedMotion = false; UpdateIdleActivityGeometry();
-            Expand(true); await Task.Delay(350);
+            ActivityNotice(new("power", "Charging", 72));
+            frame = _pill.ActivityFrame; await Task.Delay(180);
+            checks.Add(("Charging entrance renders new native frames", !SystemInformation.IsMenuAnimationEnabled || _pill.ActivityFrame != frame));
+            await Task.Delay(650); frame = _pill.ActivityFrame; await Task.Delay(100);
+            checks.Add(("Charging settles without a permanent animation timer", _pill.HasActivity && !_pill.ActivityAnimating && _pill.ActivityFrame == frame));
+            _pill.ExpireNotice(Environment.TickCount64 + 5000); UpdateIdleActivityGeometry();
+            Expand(false); await Task.Delay(350);
+            _currentMedia = ActivityTests.Music() with { Duration = 180, Position = 42, UpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), CanPlay = true, CanPause = true, CanToggle = true, CanSeek = true, Revision = 100 };
+            OpenFirst(); await Task.Delay(700);
+            checks.Add(("Active media opens first in its own 400 by 224 DIP viewport", _expanded && _mediaOnly && !_presentationWaiting && !_animation.Enabled && Size == PanelSize(MediaWidth, MediaHeight) && _web.Size == Size));
+            var mediaScript = await _web.CoreWebView2.ExecuteScriptAsync("JSON.stringify({view:document.querySelector('#yuta').dataset.view,ready:document.querySelector('#yuta').dataset.preparing,overflow:document.querySelector('#panel').scrollHeight>document.querySelector('#panel').clientHeight,players:document.querySelectorAll('#media-progress').length})");
+            using (var mediaState = JsonDocument.Parse(JsonSerializer.Deserialize<string>(mediaScript)!))
+                checks.Add(("Media first frame is ready with one seek control and no clipped content", mediaState.RootElement.GetProperty("view").GetString() == "media" && mediaState.RootElement.GetProperty("ready").GetString() == "false" && !mediaState.RootElement.GetProperty("overflow").GetBoolean() && mediaState.RootElement.GetProperty("players").GetInt32() == 1));
+            using (var capture = File.Create(Path.Combine(AppContext.BaseDirectory, "media-peek.png")))
+                await _web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png, capture);
+            Expand(true); await Task.Delay(700);
+            checks.Add(("Second expansion restores the full frame without changing zoom", !_mediaOnly && !_presentationWaiting && !_animation.Enabled && _web.ZoomFactor == 1 && Size == PanelSize(PanelWidth, _panelHeight) && _web.Size == Size));
+            Expand(false); await Task.Delay(350);
+            OpenFirst(); var staleEpoch = _presentationEpoch; Expand(false); PresentPrepared(staleEpoch); await Task.Delay(350);
+            checks.Add(("A late layout acknowledgement cannot reopen a dismissed player", !_expanded && !_presentationWaiting && !_web.Visible && _pill.Visible));
+            _currentMedia = _currentMedia with { Playing = false, Revision = 101 };
+            OpenFirst(); await Task.Delay(700);
+            checks.Add(("Paused media opens the full menu directly", _expanded && !_mediaOnly && Size == PanelSize(PanelWidth, _panelHeight)));
+            _currentMedia = new();
             var firstControls = _system.ControlsAsync(); var secondControls = _system.ControlsAsync();
             checks.Add(("Hardware reads share pending work", ReferenceEquals(firstControls, secondControls) || ReferenceEquals(await firstControls, await secondControls)));
             checks.Add(("Hardware read cache reuses snapshot", ReferenceEquals(await firstControls, await _system.ControlsAsync())));

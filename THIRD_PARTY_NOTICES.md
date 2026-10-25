@@ -15,6 +15,8 @@ Yuta's original source and project artwork are all rights reserved. That notice 
 
 Exact direct dependencies are in [Yuta.csproj](Yuta.csproj) and [package.json](package.json). Transitive dependencies retain their own package notices. Preserve all bundled runtime notices when distributing an authorized build.
 
+Official portable downloads include NAudio and WebView2 license/notice texts in `licenses/`, Phosphor's notice in `ui/assets/icons/LICENSE`, and the .NET runtime notices supplied by the self-contained publish.
+
 Weather data is provided by [Open-Meteo](https://open-meteo.com/), with attribution under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The optional speed test uses [Cloudflare's speed service](https://speed.cloudflare.com/).
 
 Windows, Microsoft, Spotify, and other third-party names or marks identify compatible platforms or applications. Yuta is not affiliated with or endorsed by those companies. Demonstration track names and artwork are fictional; no commercial album artwork is bundled in the documentation.

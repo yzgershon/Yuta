@@ -35,24 +35,25 @@ internal static class NotchGeometry
 
         // Concave shoulders meet the screen edge; the bottom corners stay convex.
         // The idle shoulders and bottom radii follow its height proportionally.
-        var shoulder = Math.Min(20 * scale, Math.Min(h * 4 / 9, w / 4));
-        var radiusBottom = Math.Min(26 * scale, Math.Min(h - shoulder, (w - 2 * shoulder) / 2));
+        var shoulder = Math.Min(22 * scale, Math.Min(h * .57f, w / 4));
+        var shoulderDepth = Math.Min(34 * scale, h * .52f);
+        var radiusBottom = Math.Min(26 * scale, Math.Min(h - shoulderDepth, (w - 2 * shoulder) / 2));
         var left = x + shoulder; var right = x + w - shoulder;
         var bottom = y + h; var cornerY = bottom - radiusBottom;
         var control = radiusBottom * CircleBezier;
         path.StartFigure();
         path.AddLine(x, y, x + w, y);
-        path.AddBezier(x + w, y, x + w - shoulder * .75f, y,
-            right, y + shoulder * .4375f, right, y + shoulder);
-        path.AddLine(right, y + shoulder, right, cornerY);
+        path.AddBezier(x + w, y, x + w - shoulder * .62f, y,
+            right, y + shoulderDepth * .38f, right, y + shoulderDepth);
+        path.AddLine(right, y + shoulderDepth, right, cornerY);
         path.AddBezier(right, cornerY, right, cornerY + control,
             right - radiusBottom + control, bottom, right - radiusBottom, bottom);
         path.AddLine(right - radiusBottom, bottom, left + radiusBottom, bottom);
         path.AddBezier(left + radiusBottom, bottom, left + radiusBottom - control, bottom,
             left, cornerY + control, left, cornerY);
-        path.AddLine(left, cornerY, left, y + shoulder);
-        path.AddBezier(left, y + shoulder, left, y + shoulder * .4375f,
-            x + shoulder * .75f, y, x, y);
+        path.AddLine(left, cornerY, left, y + shoulderDepth);
+        path.AddBezier(left, y + shoulderDepth, left, y + shoulderDepth * .38f,
+            x + shoulder * .62f, y, x, y);
         path.CloseFigure();
         return path;
     }
