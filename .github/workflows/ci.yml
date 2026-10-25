@@ -55,7 +55,9 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: '8.0.x'
+          # Match the SDK available in the last successful Windows run.
+          # Floating 8.0.x can resolve before its download is available.
+          dotnet-version: '8.0.426'
       - name: Package portable app
         shell: pwsh
         run: ./scripts/package.ps1 -Runtime ${{ matrix.runtime }}
