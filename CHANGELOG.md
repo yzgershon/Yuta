@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Reduced the compact media player from 400 × 224 to 400 × 144 logical pixels. Playback controls now sit beside the artwork and track details, with the waveform below. Play/pause and text retain their sizes.
+- Compact keyboard navigation follows the visible transport controls before the seek slider; long titles fit without overlapping controls.
+- Home and the other full-menu panels keep their existing dimensions. The v0.2.0 download archives are unchanged.
+
 ## 0.2.0 — 2026-10-25
 
 - First public portable downloads for Windows ARM64 and x64, including .NET, install instructions, source commit metadata, and SHA-256 checksums.

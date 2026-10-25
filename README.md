@@ -26,6 +26,8 @@ Yuta brings music, copied items, app shortcuts, and everyday tools into a small 
 
 Yuta is available as a portable Windows 11 app for **x64 and ARM64**. The source is public for review with **all rights reserved**. See [LICENSE](LICENSE).
 
+The current development source includes a shorter, 400 × 144 music player with playback controls beside the track. This improvement is listed under [Unreleased](CHANGELOG.md#unreleased); the v0.2.0 downloads below contain the previous layout.
+
 ## Download
 
 | Your computer | Yuta 0.2.0 |

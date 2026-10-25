@@ -137,7 +137,7 @@ public sealed partial class NotchForm
             Expand(false); await Task.Delay(350);
             _currentMedia = ActivityTests.Music() with { Duration = 180, Position = 42, UpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), CanPlay = true, CanPause = true, CanToggle = true, CanSeek = true, Revision = 100 };
             OpenFirst(); await Task.Delay(700);
-            checks.Add(("Active media opens first in its own 400 by 224 DIP viewport", _expanded && _mediaOnly && !_presentationWaiting && !_animation.Enabled && Size == PanelSize(MediaWidth, MediaHeight) && _web.Size == Size));
+            checks.Add(("Active media opens first in its own 400 by 144 DIP viewport", _expanded && _mediaOnly && !_presentationWaiting && !_animation.Enabled && Size == PanelSize(MediaWidth, MediaHeight) && _web.Size == Size));
             var mediaScript = await _web.CoreWebView2.ExecuteScriptAsync("JSON.stringify({view:document.querySelector('#yuta').dataset.view,ready:document.querySelector('#yuta').dataset.preparing,overflow:document.querySelector('#panel').scrollHeight>document.querySelector('#panel').clientHeight,players:document.querySelectorAll('#media-progress').length})");
             using (var mediaState = JsonDocument.Parse(JsonSerializer.Deserialize<string>(mediaScript)!))
                 checks.Add(("Media first frame is ready with one seek control and no clipped content", mediaState.RootElement.GetProperty("view").GetString() == "media" && mediaState.RootElement.GetProperty("ready").GetString() == "false" && !mediaState.RootElement.GetProperty("overflow").GetBoolean() && mediaState.RootElement.GetProperty("players").GetInt32() == 1));
