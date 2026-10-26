@@ -31,7 +31,7 @@ flowchart LR
 
 The browser viewport stays fixed during opening and closing. Native clipping animates the visible bounds, avoiding repeated responsive layout work on every frame. Rapid reversals continue from the current geometry. The native idle surface uses display-density-aware rendering and transparent antialiased edges.
 
-Full views share a 760 × 366 logical-pixel frame; the media-only view is 400 × 224. A generation-based layout-ready handshake prevents the host from revealing a stale intermediate viewport. Opening takes 480 ms and closing takes 260 ms; content fades/translates without a scale transform. `NotchGeometry.cs` and `ui/notch-path.js` share the extended shoulder shape for native and browser surfaces.
+Full views share a 760 × 366 logical-pixel frame; the media-only view is 400 × 144. Its transport controls sit beside the artwork and metadata, with the timeline below. A generation-based layout-ready handshake prevents the host from revealing a stale intermediate viewport. Opening takes 480 ms and closing takes 260 ms; content fades/translates without a scale transform. `NotchGeometry.cs` and `ui/notch-path.js` share the extended shoulder shape for native and browser surfaces.
 
 Expanded panels are retained and patched instead of rebuilt wholesale. Keys preserve focused fields, selection, drafts, scroll positions, and decoded images. Hardware reads do not block navigation. Media transport has immediate optimistic feedback, ordered commands, and rollback when the player rejects an action.
 

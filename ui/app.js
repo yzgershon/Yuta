@@ -18,7 +18,7 @@ let wallMode='all';
 let panelTimer,toastTimer,hoverTimer,weatherKey='',statsInFlight=false;
 let activePanel,previewPill,wallRevision=0,wallpapersLoaded=false,lastHeight=0,wallRequest=0;
 let updateIdlePreview,mediaOnly=false,presentationEpoch=0,paletteArtwork,pendingPresentation;
-const mediaWidth=400,mediaHeight=224;
+const mediaWidth=400,mediaHeight=144;
 const isPlayerVisible=()=>expanded&&(mediaOnly||tab==='Home');
 const viewWidth=()=>mediaOnly?mediaWidth:panelWidth;
 const viewHeight=()=>mediaOnly?mediaHeight:panelHeight;
@@ -185,7 +185,7 @@ function openPinEditor(){
 function mediaView(){
  const focused=document.activeElement;
  const value=mediaScrubbing&&focused?.id==='media-progress'?{...media,position:Number(focused.value),updatedAt:Date.now()}:media;
- return `${button('fullMenu','','arrows-out-simple','icon-button media-expand','aria-label="Open full menu" title="Open full menu"')}${mediaCard(value,mediaPending,icon,ib)}`;
+ return `${button('fullMenu','','arrows-out-simple','icon-button media-expand','aria-label="Open full menu" title="Open full menu"')}${mediaCard(value,mediaPending,icon,ib,true)}`;
 }
 function homeView(){
  const focused=document.activeElement;

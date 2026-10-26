@@ -3,7 +3,7 @@ import {useNativeBridge} from './native-bridge.fixture.js';
 
 async function mediaPeek(page){
  await useNativeBridge(page,{startSection:'Home'});
- await page.setViewportSize({width:400,height:224});
+ await page.setViewportSize({width:400,height:144});
  await page.evaluate(()=>window.__nativeFixture.emit('expanded',{value:true,view:'media',epoch:12,media:window.__nativeFixture.media}));
  await expect(page.locator('#yuta')).toHaveAttribute('data-preparing','false');
  await expect(page.getByRole('tabpanel',{name:'Now playing'})).toBeVisible();
@@ -32,8 +32,16 @@ test('media-only layout fits long video titles and has a keyboard-accessible ful
  await mediaPeek(page);
  await page.evaluate(()=>window.__nativeFixture.emit('media',{...window.__nativeFixture.media,sourceName:'Google Chrome',title:'A long video title that must stay inside the compact player without moving any controls',artist:'Video channel',revision:5}));
  await page.waitForTimeout(500);
- const boxes=await page.evaluate(()=>{const p=document.querySelector('#panel'),b=p.getBoundingClientRect();return {overflow:p.scrollHeight-p.clientHeight,controls:[...p.querySelectorAll('button,input')].map(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=400&&r.top>=0&&r.bottom<=224;}),transform:getComputedStyle(p).transform};});
+ const boxes=await page.evaluate(()=>{const p=document.querySelector('#panel'),b=p.getBoundingClientRect();return {overflow:p.scrollHeight-p.clientHeight,controls:[...p.querySelectorAll('button,input')].map(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=400&&r.top>=0&&r.bottom<=144;}),transform:getComputedStyle(p).transform};});
  expect(boxes.overflow).toBe(0);expect(boxes.controls.every(Boolean)).toBe(true);expect(boxes.transform).toBe('none');
+ const layout=await page.evaluate(()=>{
+  const rect=selector=>document.querySelector(selector).getBoundingClientRect();
+  const body=rect('.media-body'),transport=rect('.media-transport'),timeline=rect('.media-timeline'),play=rect('[data-command=toggle]'),title=rect('.media-info strong');
+  return {separate:body.right<=transport.left,aligned:Math.abs((body.top+body.bottom)-(transport.top+transport.bottom))<2,timelineBelow:timeline.top>=Math.max(body.bottom,transport.bottom),playWidth:play.width,titleWidth:title.width,focusOrder:[...document.querySelector('.media-card').querySelectorAll('button,input')].map(e=>e.dataset.command||e.id)};
+ });
+ expect(layout.separate&&layout.aligned&&layout.timelineBelow).toBe(true);
+ expect(layout.playWidth).toBeGreaterThanOrEqual(40);expect(layout.titleWidth).toBeGreaterThan(90);
+ expect(layout.focusOrder).toEqual(['previous','toggle','next','media-progress']);
  await page.screenshot({path:'artifacts/media-peek/compact-video.png'});
  const full=page.getByRole('button',{name:'Open full menu',exact:true});await full.focus();await page.keyboard.press('Enter');
  await expect(page.locator('#yuta')).toHaveAttribute('data-view','full');

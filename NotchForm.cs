@@ -13,7 +13,7 @@ public sealed partial class NotchForm : Form
     // Preserve the original control and type sizes. Short displays scroll the
     // content area instead of shrinking the entire interface.
     private const int PanelWidth = 760;
-    private const int MediaWidth = 400, MediaHeight = 224;
+    private const int MediaWidth = 400, MediaHeight = 144;
     private const int OpenDuration = 480, CloseDuration = 260;
     private readonly bool _smoke;
     private readonly bool _performance = Environment.GetCommandLineArgs().Contains("--performance-test");

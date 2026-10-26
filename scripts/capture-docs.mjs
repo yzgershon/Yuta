@@ -61,7 +61,7 @@ try{
  await page.getByRole('tab',{name:'Today',exact:true}).click();
  await page.locator('.weather strong').filter({hasText:'18'}).waitFor();
  await page.screenshot({path:path.join(out,'today.png'),animations:'disabled'});
- await page.setViewportSize({width:400,height:224});
+ await page.setViewportSize({width:400,height:144});
  await page.evaluate(()=>window.__docs.emit('expanded',{value:true,view:'media',epoch:2,media:window.__docs.media}));
  await page.getByRole('tabpanel',{name:'Now playing'}).waitFor();
  await page.waitForFunction(()=>document.querySelector('#yuta').dataset.preparing==='false');

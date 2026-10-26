@@ -33,15 +33,17 @@
 .home-layout .media-transport .icon-button>.icon,.panel-media .media-transport .icon-button>.icon{width:17px;height:17px;min-width:17px}
 .yuta.media-only.expanded{background:radial-gradient(ellipse at 20% 0,var(--media-wash),transparent 100%),var(--media-deep)}
 .yuta.media-only .topbar{display:none}
-.yuta .panel-media{position:relative;width:100%;height:100%;padding:29px 40px 19px;overflow:hidden;cursor:pointer}
-.panel-media .media-card{align-items:stretch;padding:0;border:0;background:none;border-radius:0}
-.panel-media .media-body{gap:14px;padding-right:0}
-.panel-media .media-body .album-art{width:62px;height:62px;min-width:62px}
+.yuta .panel-media{position:relative;width:100%;height:100%;padding:30px 40px 16px;overflow:hidden;cursor:pointer}
+.panel-media .media-card{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:8px;align-items:center;margin:0;padding:0;border:0;background:none;border-radius:0}
+.panel-media .media-body{grid-column:1;grid-row:1;gap:12px;padding-right:0}
+.panel-media .media-body .album-art{width:56px;height:56px;min-width:56px}
 .panel-media .media-body .media-info strong{font-size:16px}
 .panel-media .media-body .media-info>.media-artist{font-size:11px}
-.panel-media .media-source{font-size:9px;max-width:210px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.panel-media .media-timeline{margin-top:12px}
-.panel-media .media-transport{margin-top:9px}
+.panel-media .media-heading{margin-bottom:4px}
+.panel-media .media-source{font-size:9px;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panel-media .media-timeline{grid-column:1/-1;grid-row:2;margin-top:0}
+.panel-media .media-transport{grid-column:2;grid-row:1;margin-top:0}
+.panel-media .media-transport .media-buttons{gap:2px}
 .panel-media .media-transport .media-buttons .icon-button:nth-child(2){width:40px;height:40px;min-width:40px}
 .panel-media .media-expand{position:absolute;right:37px;top:3px;width:26px;height:24px;color:#d9dce799;background:none;z-index:1}
 .panel-media .media-expand .icon{width:13px;height:13px;min-width:13px}
