@@ -1,9 +1,8 @@
 import {test,expect} from '@playwright/test';
 
 test('music widens lengthwise, retains a focus timer, and pauses its animation when closed',async({page})=>{
- await page.goto('/');await page.getByRole('tab',{name:'Today',exact:true}).click();
- await page.getByRole('button',{name:'1m',exact:true}).click();
- await page.getByRole('button',{name:'Start',exact:true}).click();
+ await page.addInitScript(()=>localStorage.setItem('yuta-preview',JSON.stringify({timer:{duration:600,remaining:600,running:true,endsAt:Date.now()+600000}})));
+ await page.goto('/');await page.getByRole('tab',{name:'Darch',exact:true}).click();
  const examples=page.getByRole('group',{name:'Preview activity'});
  await examples.getByRole('button',{name:'Music',exact:true}).click();
  const pill=page.getByRole('button',{name:'Open Yuta',exact:true});
@@ -30,7 +29,7 @@ test('music widens lengthwise, retains a focus timer, and pauses its animation w
 
 test('preview notices use distinct status content and reduced motion is static',async({page})=>{
  await page.emulateMedia({reducedMotion:'reduce'});
- await page.goto('/');await page.getByRole('tab',{name:'Today',exact:true}).click();
+ await page.goto('/');await page.getByRole('tab',{name:'Darch',exact:true}).click();
  const examples=page.getByRole('group',{name:'Preview activity'}),pill=page.getByRole('button',{name:'Open Yuta',exact:true});
  await examples.getByRole('button',{name:'Music',exact:true}).click();
  await expect(pill.locator('.idle-title')).toHaveText('Rover');

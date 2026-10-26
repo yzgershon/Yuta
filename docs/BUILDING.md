@@ -78,7 +78,7 @@ Open `http://127.0.0.1:4179`. This is a UI preview with sample data. It cannot c
 npm.cmd run docs:capture
 ```
 
-This renders `ui/` at 2x pixel density with a deterministic clock and fictional app, clipboard, weather, task, and media data. It writes `docs/images/home.png`, `today.png`, and `media.png`. It never opens a real user profile. See [Media](MEDIA.md) for generated product artwork.
+This renders `ui/` at 2x pixel density with a deterministic clock and fictional app, clipboard, and media data. It writes `docs/images/home.png`, `darch-connect.png`, and `media.png`. Darch is shown disconnected; the original `today.png` remains a v0.2.0 release capture. It never opens a real user profile or contacts a Darch account. See [Media](MEDIA.md) for generated product artwork.
 
 ## Troubleshooting
 

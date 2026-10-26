@@ -23,7 +23,7 @@ test('compact player keeps playback and seeking separate from the second expansi
  await page.locator('.album-art').click();
  await expect(page.locator('#yuta')).toHaveAttribute('data-view','full');
  await page.setViewportSize({width:760,height:366});
- await expect(page.getByRole('tab',{name:'Today',exact:true})).toBeVisible();
+ await expect(page.getByRole('tab',{name:'Darch',exact:true})).toBeVisible();
  await expect(page.locator('#media-progress')).toHaveCount(1);
  expect(await page.evaluate(()=>window.__nativeFixture.calls.filter(c=>c.method==='expand').at(-1)?.args.full)).toBe(true);
 });
@@ -69,10 +69,10 @@ test('artwork tint follows each cover, handles missing artwork, and the seek wav
 
 test('layout readiness is acknowledged before reveal and stale reveals cannot animate a closed player',async({page})=>{
  await mediaPeek(page);
- const frames=await page.locator('.panel').evaluate(el=>el.getAnimations().flatMap(a=>a.effect.getKeyframes()));
+ const frames=await page.locator('.panel:not([hidden])').evaluate(el=>el.getAnimations().flatMap(a=>a.effect.getKeyframes()));
  expect(frames.every(f=>!String(f.transform).includes('scale'))).toBe(true);
  await page.keyboard.press('Escape');
  await page.evaluate(()=>window.__nativeFixture.emit('presentationShown',12));
  await expect(page.locator('#yuta')).toHaveAttribute('data-expanded','false');
- expect(await page.locator('.panel').evaluate(el=>el.getAnimations().length)).toBe(0);
+ expect(await page.locator('.panel:not([hidden])').evaluate(el=>el.getAnimations().length)).toBe(0);
 });

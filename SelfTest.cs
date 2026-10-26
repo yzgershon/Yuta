@@ -19,6 +19,7 @@ internal static class SelfTest
         void Check(string name, Func<bool> check) { try { checks.Add(new { name, passed = check() }); } catch (Exception e) { checks.Add(new { name, passed = false, error = e.Message }); } }
         MediaSessionTests.Run(Check);
         var root = Path.Combine(Path.GetTempPath(), "Yuta-test-" + Guid.NewGuid().ToString("N"));
+        DarchTests.Run(Check, root);
         HotkeyTests.Run(Check, root);
         VisibilityTests.Run(Check, root);
         ActivityTests.Run(Check);

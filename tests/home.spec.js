@@ -4,7 +4,7 @@ import {useNativeBridge} from './native-bridge.fixture.js';
 test('Home is centered, compact, icon-only, and keeps direct power actions',async({page})=>{
  await page.setViewportSize({width:760,height:366});
  await useNativeBridge(page,{startSection:'Home'});
- await expect(page.getByRole('tab')).toHaveText(['Home','Today','Stats','Wallpaper']);
+ await expect(page.getByRole('tab')).toHaveText(['Home','Darch','Stats','Wallpaper']);
  await expect(page.locator('.topbar button').first()).toHaveAccessibleName('Home');
  await expect(page.locator('.home-app img')).toHaveCount(6);
  await expect(page.getByRole('group',{name:'Connections'}).getByRole('button')).toHaveCount(6);

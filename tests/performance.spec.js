@@ -10,14 +10,14 @@ test('rapid navigation stays on the last requested section when native reads fin
  await expect(page.getByRole('tabpanel',{name:'Today',exact:true})).toBeVisible();
  await page.waitForTimeout(850);
  await expect(page.getByRole('tabpanel',{name:'Today',exact:true})).toBeVisible();
- await expect(page.getByRole('tab',{name:'Today',exact:true})).toHaveAttribute('aria-selected','true');
+ await expect(page.getByRole('tab',{name:'Darch',exact:true})).toHaveAttribute('aria-selected','true');
  expect(await page.evaluate(()=>window.__initialNavigation===document.querySelector('.tabs'))).toBe(true);
  expect(await page.evaluate(()=>window.__yutaErrors)).toEqual([]);
 });
 
 test('keyboard tab focus moves immediately while a native read is pending',async({page})=>{
  await useNativeBridge(page,{delays:{stats:5000,clipboard:5000}});
- await page.getByRole('tab',{name:'Today',exact:true}).focus();
+ await page.getByRole('tab',{name:'Darch',exact:true}).focus();
  await page.keyboard.press('ArrowRight');
  await expect(page.getByRole('tab',{name:'Stats',exact:true})).toBeFocused({timeout:1000});
  await page.keyboard.press('ArrowRight');
@@ -65,20 +65,7 @@ test('background app refresh preserves the active search and text selection',asy
  expect(await page.evaluate(()=>window.__yutaErrors)).toEqual([]);
 });
 
-test('an unsaved to-do survives unrelated updates after focus moves away',async({page})=>{
- await page.goto('/');await page.getByRole('tab',{name:'Today',exact:true}).click();
- const draft=page.getByLabel('New to-do',{exact:true});
- await draft.fill('Keep this thought while I check next week');
- await page.getByRole('button',{name:'Next week',exact:true}).click();
- await expect(draft).not.toBeFocused();
- await expect(draft).toHaveValue('Keep this thought while I check next week');
- await page.getByRole('tab',{name:'Home',exact:true}).click();await page.getByRole('button',{name:'Edit pinned apps',exact:true}).click();
- await page.getByRole('button',{name:'Cancel',exact:true}).click();await page.getByRole('tab',{name:'Today',exact:true}).click();
- await expect(draft).toHaveValue('Keep this thought while I check next week');
- await page.getByRole('button',{name:'Add task',exact:true}).click();
- await expect(page.getByText('Keep this thought while I check next week',{exact:true})).toBeVisible();
- await expect(draft).toHaveValue('');
-});
+// Darch draft retention across native events and tab changes is covered in darch.spec.js.
 
 test('connection icons launch settings and retain focus across media refresh',async({page})=>{
  await useNativeBridge(page,{delays:{controls:250,media:400}});

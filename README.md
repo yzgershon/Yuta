@@ -26,7 +26,7 @@ Yuta brings music, copied items, app shortcuts, and everyday tools into a small 
 
 Yuta is available as a portable Windows 11 app for **x64 and ARM64**. The source is public for review with **all rights reserved**. See [LICENSE](LICENSE).
 
-The current development source includes a shorter, 400 × 144 music player with playback controls beside the track. This improvement is listed under [Unreleased](CHANGELOG.md#unreleased); the v0.2.0 downloads below contain the previous layout.
+The development source includes a shorter, 400 × 144 music player and a connected [Darch workspace](docs/darch.md) with configurable sections. Darch requires its matching API deployment before account linking works. These changes are listed under [Unreleased](CHANGELOG.md#unreleased); the v0.2.0 downloads below have not been updated.
 
 ## Download
 
@@ -71,7 +71,9 @@ Accessibility-provider support varies by app. Smart flattening is experimental a
 
 <img src="docs/images/today.png" alt="Actual Yuta Today interface with a clock, weather, local weekly calendar, focus timer, and to-do list" width="100%">
 
-**Today** holds the clock, city-based weather, local calendar, tasks, and focus timer. **Stats** shows system activity and top processes. **Wallpaper** browses a local image folder. Routines open a saved group of destinations. Every full-menu view uses the same compact frame, with longer content scrolling inside it.
+The v0.2.0 **Today** page shown above holds the local calendar, weather, tasks, and timer. In development source, **Darch** replaces it with Today, Assignments, Calendar, Focus, Time log, Grades, Brain games, and Settings, plus SAT and Admin when the connected account permits them. Hide or reorder sections in Yuta Settings. Sign in through Chrome, edit the same Darch account data, and keep Focus synced between Darch and Yuta. Existing local tasks remain in the profile.
+
+**Stats** shows system activity and top processes. **Wallpaper** browses a local image folder. Routines open a saved group of destinations. Every full-menu view uses the same compact frame, with longer content scrolling inside it.
 
 Calendar events are local. Calendar-account sync, general Bluetooth device batteries, and hotspot activity are not implemented. Voice activity uses Windows microphone/session meters; it is not a universal call-status detector. Browser calls are identified by browser, not by the individual meeting tab. The [user guide](docs/USAGE.md) covers current behavior and limits.
 
@@ -96,7 +98,7 @@ For prerequisites, test commands, browser preview, and troubleshooting, see [Bui
 
 ## Local data, explicit integrations
 
-Tasks, settings, and routines stay in a local profile. Clipboard recording starts off. Audio activity reads Windows level meters without opening a recording stream or storing audio. Weather requests go to Open-Meteo only when a city is configured; the optional speed test contacts Cloudflare. Yuta has no account service or analytics backend.
+Yuta preferences and routines stay in a local profile. Connecting Darch is optional; its workspace reads and writes your Darch account through that service. Credentials are protected by Windows DPAPI and the connection can be revoked. Clipboard recording starts off. Audio activity reads Windows level meters without opening a recording stream or storing audio. Weather requests go to Open-Meteo only when a city is configured; the optional speed test contacts Cloudflare. Yuta has no separate account service or analytics backend.
 
 Read the [privacy and storage guide](docs/PRIVACY.md) for exact paths, encryption boundaries, browser-host detection, and network behavior.
 

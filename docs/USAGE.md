@@ -28,7 +28,7 @@ Smart flattening checks whether supported interactive controls overlap the norma
 
 ## Other sections
 
-- **Today:** local calendar events, tasks, city weather, and a focus timer with presets or a custom duration. Calendar events are not synced to an account.
+- **Darch (development source):** connect through Chrome from Yuta Settings to use the existing Darch workspace. All account-permitted sections appear by default; hide or reorder them in Yuta Settings. Assignments, calendars, grades and the other tools use Darch's account data, with a shared Focus timer. Use the arrow beside Darch to open the selected page in Chrome. The matching API must be deployed first; v0.2.0 downloads still have the original local Today page. See [Darch](darch.md).
 - **Stats:** CPU/GPU/RAM, top processes, disk, network activity, uptime, and an optional speed estimate. Some devices do not expose every counter.
 - **Wallpaper:** choose a local folder, browse images, and apply a wallpaper. Recent selections are retained.
 - **Routines:** open a named group of up to 12 apps, files, folders, or HTTP(S) websites. Arbitrary shell commands are not accepted.

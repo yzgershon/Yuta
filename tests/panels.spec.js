@@ -9,17 +9,13 @@ test('populated views keep their frame and scroll long content without hiding ac
   events:Array.from({length:12},(_,i)=>({id:'event-'+i,date,time:`${String(i+8).padStart(2,'0')}:00`,title:`Event ${i+1}: a longer appointment title with useful details`})),
   routines:Array.from({length:12},(_,i)=>({id:'routine-'+i,name:`Routine ${i+1}: a saved workspace with a longer descriptive name`,targets:['https://example.com']}))
  }});
- await expect(page.locator('.task')).toHaveCount(30);
- await expect(page.locator('.event')).toHaveCount(12);
- await page.locator('.task').last().scrollIntoViewIfNeeded();
- await page.locator('.event').last().scrollIntoViewIfNeeded();
- for(const selector of ['.task-list','.agenda'])expect(await page.locator(selector).evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
- for(const label of ['Add task','Start','Custom timer duration']){
-  const b=await page.getByRole('button',{name:label,exact:true}).boundingBox();
-  expect(b.y).toBeGreaterThan(56);expect(b.y+b.height).toBeLessThanOrEqual(366);
- }
+ await expect(page.locator('.darch-rail nav button')).toHaveCount(8);
+ await page.locator('.darch-rail nav button').last().scrollIntoViewIfNeeded();
+ expect(await page.locator('.darch-rail nav').evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
+ const connect=await page.getByRole('button',{name:'Connect Darch',exact:true}).boundingBox();
+ expect(connect.y).toBeGreaterThan(56);expect(connect.y+connect.height).toBeLessThanOrEqual(366);
  expect(await page.locator('#panel').evaluate(el=>el.scrollTop)).toBe(0);
- await page.screenshot({path:'artifacts/equal-panels/today-populated.png'});
+ await page.screenshot({path:'artifacts/equal-panels/darch-unlinked.png'});
 
  await page.getByRole('button',{name:'Routines',exact:true}).click();
  await expect(page.locator('.routine-card')).toHaveCount(12);

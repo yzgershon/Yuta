@@ -10,7 +10,7 @@ async function openRecorder(page){
 }
 
 test('Alt Space is the default and a recorded shortcut updates labels and persists after reload',async({page})=>{
- await page.goto('/');await page.getByRole('tab',{name:'Today',exact:true}).click();
+ await page.goto('/');await page.getByRole('tab',{name:'Darch',exact:true}).click();
  await expect(page.locator('[data-preview-hotkey]')).toHaveText('Alt + Space');
  const button=await openRecorder(page);
  await page.keyboard.press('Control+Shift+KeyY');
@@ -26,7 +26,7 @@ test('Alt Space is the default and a recorded shortcut updates labels and persis
 });
 
 test('the recorder rejects typing shortcuts and Escape cancels without collapsing or changing the binding',async({page})=>{
- await page.goto('/');await page.getByRole('tab',{name:'Today',exact:true}).click();
+ await page.goto('/');await page.getByRole('tab',{name:'Darch',exact:true}).click();
  const button=await openRecorder(page);
  await page.keyboard.press('Shift+KeyZ');
  await expect(page.locator('#hotkey-status')).toHaveText('Include Ctrl, Alt, or Win so normal typing stays available.');
@@ -46,7 +46,7 @@ test('legacy default migrates once and an explicit later Ctrl Alt Space choice s
  await page.addInitScript(()=>{
   if(!localStorage.getItem('yuta-preview'))localStorage.setItem('yuta-preview',JSON.stringify({notes:'Preserve this note',todos:[{id:'saved',text:'Preserve this task',done:false}],settings:{hotkey:'Ctrl+Alt+Space',accent:'rose',city:'Boston'}}));
  });
- await page.goto('/');await page.getByRole('tab',{name:'Today',exact:true}).click();
+ await page.goto('/');await page.getByRole('tab',{name:'Darch',exact:true}).click();
  await expect(page.locator('[data-preview-hotkey]')).toHaveText('Alt + Space');
  const migrated=await page.evaluate(()=>JSON.parse(localStorage.getItem('yuta-preview')));
  expect(migrated.hotkeyVersion).toBe(1);expect(migrated.notes).toBe('Preserve this note');expect(migrated.todos[0].text).toBe('Preserve this task');expect(migrated.settings.city).toBe('Boston');
@@ -83,7 +83,7 @@ test('native conflict keeps the previous shortcut and native key capture does no
  expect(await page.evaluate(()=>window.__nativeFixture.calls.filter(x=>x.method==='hotkeySet').length)).toBe(1);
  await expect(page.locator('#yuta')).toHaveAttribute('data-expanded','true');
  expect(await page.evaluate(()=>window.__nativeFixture.hotkeyRecording)).toBe(true);
- const layout=await page.locator('.panel').evaluate(el=>({height:el.clientHeight,scrollHeight:el.scrollHeight,width:el.clientWidth,scrollWidth:el.scrollWidth}));
+ const layout=await page.locator('.panel:not([hidden])').evaluate(el=>({height:el.clientHeight,scrollHeight:el.scrollHeight,width:el.clientWidth,scrollWidth:el.scrollWidth}));
  expect(layout.scrollWidth).toBeLessThanOrEqual(layout.width+1);
  expect(layout.scrollHeight).toBeLessThanOrEqual(layout.height+1);
  await page.evaluate(()=>{window.__nativeFixture.hotkeyConflict=false;window.__nativeFixture.emit('hotkeyCaptured','Alt+Space');window.__nativeFixture.emit('hotkeyCaptured','Alt+Space');});

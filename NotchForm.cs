@@ -18,6 +18,9 @@ public sealed partial class NotchForm : Form
     private readonly bool _smoke;
     private readonly bool _performance = Environment.GetCommandLineArgs().Contains("--performance-test");
     private readonly Store _store;
+    private readonly DarchService _darch;
+    private bool _darchPolling;
+    private long _darchPollAt;
     private readonly SystemServices _system = new();
     private readonly ConnectionService _connections = new();
     private readonly AppIconService _appIcons = new();
@@ -65,6 +68,8 @@ public sealed partial class NotchForm : Form
     {
         _smoke = smoke;
         _store = new Store(smoke ? Path.Combine(Path.GetTempPath(), "Yuta-smoke-" + Environment.ProcessId) : null);
+        _darch = new DarchService(_store.Root, smoke || _performance);
+        _darch.Changed += DarchChanged;
         _visibility = new(_store);
         _launcher = new(_store); _wallpapers = new(_store); _clipboard = new(_store.Root) { Enabled = !smoke && Setting("clipboardEnabled", false) };
         Text = "Yuta"; FormBorderStyle = FormBorderStyle.None; ShowInTaskbar = false; StartPosition = FormStartPosition.Manual;
@@ -96,7 +101,7 @@ public sealed partial class NotchForm : Form
         _animation.Tick += (_, _) => Animate();
         _foreground.Tick += (_, _) => ForegroundTick();
         _clipboardRetry.Tick += (_, _) => { if (_clipboard.Capture()) { _clipboardRetry.Stop(); _ = EmitClipboardAsync(); } else if (++_clipRetries >= 4) _clipboardRetry.Stop(); };
-        _timerAlarm.Tick += (_, _) => { CheckTimer(); UpdatePill(); };
+        _timerAlarm.Tick += (_, _) => { CheckTimer(); UpdatePill(); _ = PollDarchAsync(); };
         _system.MediaChanged += MediaChanged;
         _devices.Notice += ActivityNotice;
         UpdatePill();
@@ -365,6 +370,8 @@ public sealed partial class NotchForm : Form
         _pill.ExpireNotice(Environment.TickCount64);
         var timer = _store.Data["timer"]; var running = timer?["running"]?.GetValue<bool>() == true;
         var seconds = running ? Math.Max(0, (long)Math.Ceiling(((timer?["endsAt"]?.GetValue<long>() ?? 0) - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 1000d)) : 0;
+        var darchClock = _darch.FocusClock;
+        if (darchClock.Running) { running = true; seconds = darchClock.Seconds; }
         var text = running ? $"{seconds / 60:00}:{seconds % 60:00}" : DateTime.Now.ToString("h:mm tt");
         var accent = AccentPalette.Resolve(Setting("accent", "custom"), Setting("customAccent", AccentPalette.DefaultCustom));
         if (_pill.ClockText != text || _pill.TimerRunning != running || _pill.AccentColor != accent)
@@ -372,6 +379,19 @@ public sealed partial class NotchForm : Form
             _pill.ClockText = text; _pill.TimerRunning = running; _pill.AccentColor = accent; _pill.RefreshSurface();
         }
         UpdateIdleActivityGeometry();
+    }
+    private async Task PollDarchAsync()
+    {
+        if (_smoke || _performance || !_darch.Linked || _darchPolling || Environment.TickCount64 < _darchPollAt) return;
+        _darchPolling = true;
+        try { await _darch.ReadAsync(true); }
+        finally { _darchPolling = false; _darchPollAt = Environment.TickCount64 + 5000; }
+    }
+    private void DarchChanged()
+    {
+        if (!IsHandleCreated || IsDisposed || Disposing || _allowClose) return;
+        try { BeginInvoke(() => { if (IsDisposed || Disposing) return; Emit("darch", _darch.Status); UpdatePill(); }); }
+        catch (InvalidOperationException) { }
     }
     private int _clipboardRevision;
     private async Task EmitClipboardAsync()
@@ -415,7 +435,14 @@ public sealed partial class NotchForm : Form
         string Text(string key) => args[key]?.GetValue<string>() ?? "";
         switch (method)
         {
-            case "bootstrap": return new { state = _store.Data, apps = _launcher.Apps, clips = await _clipboard.ReadUiItemsAsync(), hotkey = _hotkey, monitors = Screen.AllScreens.Select((s, i) => new { id = i, name = $"Display {i + 1}{(s.Primary ? " · primary" : "")}" }) };
+            case "bootstrap": return new { darch = _darch.Status, state = _store.Data, apps = _launcher.Apps, clips = await _clipboard.ReadUiItemsAsync(), hotkey = _hotkey, monitors = Screen.AllScreens.Select((s, i) => new { id = i, name = $"Display {i + 1}{(s.Primary ? " · primary" : "")}" }) };
+            case "darchState": return await _darch.ReadAsync();
+            case "darchConnect": return _darch.BeginConnect();
+            case "darchDisconnect": return await _darch.DisconnectAsync();
+            case "darchFrame": return await _darch.FrameAsync();
+            case "darchOpen": DarchService.OpenSection(Text("section")); return true;
+            case "darchFocus": return await _darch.FocusAsync(args.AsObject());
+            case "darchComplete": return await _darch.CompleteAssignmentAsync(Text("id"), args["done"]?.GetValue<bool>() ?? false, args["updatedAt"]?.GetValue<long>() ?? 0);
             case "save":
                 if (Text("key") == "settings" && args["value"]?["hotkey"] is JsonValue requestedHotkey && requestedHotkey.GetValue<string>() != Setting("hotkey", Hotkey.Default))
                     throw new ArgumentException("Use the keyboard shortcut recorder to change this setting.");
@@ -575,6 +602,7 @@ public sealed partial class NotchForm : Form
         _visibilityMenu?.Dispose();
         _pill.Close(); _pill.Dispose();
         _audioUi.Stop(); _audioUi.Dispose(); _audioLevels.Dispose();
+        _darch.Changed -= DarchChanged; _darch.Dispose();
         _system.MediaChanged -= MediaChanged; _system.Dispose();
         _devices.Notice -= ActivityNotice; _devices.Dispose();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= DisplayChanged;

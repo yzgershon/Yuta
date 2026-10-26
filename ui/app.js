@@ -1,3 +1,4 @@
+import {createDarch} from './darch.js';
 import {call,native,on} from './bridge.js';
 import {uid,escapeHtml as esc,bytes,timerRemaining,timeText,dateKey,weekDays,parseTargets,weatherLabel} from './core.js';
 import {palettes,resolvePalette,applyPalette} from './palettes.js';
@@ -35,6 +36,7 @@ window.__yutaErrors=[];
 window.addEventListener('error',e=>window.__yutaErrors.push(e.message));
 window.addEventListener('unhandledrejection',e=>window.__yutaErrors.push(String(e.reason)));
 const icon=(name,cls='')=>`<span class="icon ${cls}" style="--icon:url('./assets/icons/${name}.svg')" aria-hidden="true"></span>`;
+const darch=createDarch({call,render:()=>{if(state)render();},getSettings:()=>state?.settings||{},saveSettings:async patch=>{const previous=state.settings;state.settings={...previous,...patch};try{await save('settings');}catch(error){state.settings=previous;throw error;}},icon,toast});
 const button=(action,label,ico,cls='',data='')=>`<button type="button" class="${cls}" data-action="${action}" ${data}>${ico?icon(ico):''}<span>${label}</span></button>`;
 const ib=(action,label,ico,data='')=>`<button type="button" class="icon-button" data-action="${action}" aria-label="${label}" title="${label}" ${data}>${icon(ico)}</button>`;
 const empty=(ico,title,detail='',action='')=>`<div class="empty">${icon(ico)}<strong>${title}</strong>${detail?`<p>${detail}</p>`:''}${action}</div>`;
@@ -78,7 +80,7 @@ function animateOpen(){
 }
 const parentTab=name=>name;
 async function navigate(next){if(['Controls','Power','Clipboard','Apps'].includes(next))next='Home';if(![...tabs,'Routines','Settings'].includes(next))return;if(mediaOnly){await requestOpen(true);}if(tab===next)return;if(hotkeyPhase!=='idle')cancelShortcutRecording().catch(safeError);tab=next;query='';render();resize();startPanelUpdates();loadPanel().catch(safeError);}
-function shell(content){return `<header class="topbar"><nav class="tabs" role="tablist" aria-label="Sections">${tabs.map((name,i)=>`<button type="button" id="tab-${name}" role="tab" aria-selected="${name===parentTab(tab)}" aria-controls="panel" data-action="navigate" data-tab="${name}">${icon(tabIcons[i])}<span>${name}</span></button>`).join('')}</nav>${powerToolbar(ib)}<div class="top-actions">${ib('navigate','Routines','lightning','data-tab="Routines"')}${ib('navigate','Settings','gear-six','data-tab="Settings"')}${ib('collapse','Collapse menu','caret-up')}</div></header><section class="panel panel-${tab.toLowerCase()}" id="panel" role="tabpanel" aria-label="${tab}">${content}</section>`;}
+function shell(content){return `<header class="topbar"><nav class="tabs" role="tablist" aria-label="Sections">${tabs.map((name,i)=>`<button type="button" id="tab-${name}" role="tab" aria-selected="${name===parentTab(tab)}" aria-controls="panel" data-action="navigate" data-tab="${name}">${icon(tabIcons[i])}<span>${name==='Today'?'Darch':name}</span></button>`).join('')}</nav>${powerToolbar(ib)}<div class="top-actions">${ib('navigate','Routines','lightning','data-tab="Routines"')}${ib('navigate','Settings','gear-six','data-tab="Settings"')}${ib('collapse','Collapse menu','caret-up')}</div></header><section class="panel panel-${tab.toLowerCase()}" id="panel" role="tabpanel" aria-label="${tab}">${content}</section>`;}
 function render(){
   if(!state)return;
   // The native window clips the already laid-out menu into a pill. Keeping its
@@ -90,7 +92,7 @@ function render(){
   root.style.setProperty('--panel-width',`${viewWidth()}px`);
   root.style.setProperty('--panel-height',`${viewHeight()}px`);
   scalePreview();
-  const views={Home:homeView,Today:today,Stats:statsView,Wallpaper:wallpaperView,Routines:routinesView,Settings:settingsView,Media:mediaView};
+  const views={Home:homeView,Today:darch.view,Stats:statsView,Wallpaper:wallpaperView,Routines:routinesView,Settings:settingsView,Media:mediaView};
   const view=mediaOnly?'Media':tab;
   if(!activePanel){
     root.innerHTML=shell('');activePanel=root.querySelector('.panel');
@@ -102,17 +104,22 @@ function render(){
       updateIdlePreview=createIdlePreview(root,previewPill,()=>setExpanded(false));
     }
   }
-  if(previewPill){previewPill.hidden=expanded;root.querySelectorAll('.topbar,.panel').forEach(el=>el.hidden=!expanded);previewPill.classList.toggle('running',timer().running);}
+  if(previewPill){previewPill.hidden=expanded;root.querySelector('.topbar').hidden=!expanded;activePanel.hidden=!expanded;previewPill.classList.toggle('running',timer().running);}
   root.querySelector('.topbar').hidden=mediaOnly||(!native&&!expanded);
   const entry=panels.get(view)||{element:document.createElement('section'),html:null};
   if(entry.element!==activePanel){
-    activePanel.replaceWith(entry.element);activePanel=entry.element;
+    // The Darch frame stays mounted across Yuta tab switches, preserving drafts.
+    if(activePanel.dataset.darchMounted==='true'){activePanel.hidden=true;activePanel.id='darch-panel-cache';root.append(entry.element);}
+    else if(entry.element.isConnected)activePanel.remove();
+    else activePanel.replaceWith(entry.element);
+    activePanel=entry.element;
     activePanel.id='panel';activePanel.className=`panel panel-${view.toLowerCase()}`;
     activePanel.setAttribute('role','tabpanel');activePanel.setAttribute('aria-label',view==='Media'?'Now playing':view);activePanel.hidden=!native&&!expanded;
     panels.set(view,entry);
+    if(view==='Today')activePanel.dataset.darchMounted='true';
   }
   root.querySelectorAll('.top-power button').forEach(el=>el.disabled=powerPending);
-  root.querySelectorAll('[role="tab"]').forEach(el=>el.setAttribute('aria-selected',String(el.dataset.tab===parentTab(tab))));
+  root.querySelectorAll('.tabs [role="tab"]').forEach(el=>el.setAttribute('aria-selected',String(el.dataset.tab===parentTab(tab))));
   root.querySelectorAll('.top-actions [data-tab]').forEach(el=>{if(el.dataset.tab===tab)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});
   if(view==='Wallpaper'){
     const revision=`${wallRevision}:${wallMode}:${(state.wallpaperRecent||[]).join('|')}`;
@@ -125,6 +132,7 @@ function render(){
   const shortcutHint=document.querySelector('[data-preview-hotkey]');if(shortcutHint)shortcutHint.textContent=shortcutLabel(state.settings.hotkey);
   updateClock();
   updateIdlePreview?.({media});
+  darch.setVisible(expanded&&view==='Today');
   if(!native)root.style.clipPath=expanded&&state.settings.shape==='notch'?`path("${notchPath(root.clientWidth,root.clientHeight)}")`:'';
 }
 // Patch existing elements, preserving focus, selection, scroll positions and
@@ -287,7 +295,7 @@ function recordShortcutKey(event){
  try{const shortcut=shortcutFromEvent(event);if(shortcut)captureShortcut(shortcut).catch(safeError);}
  catch(error){hotkeyMessage=error.message;hotkeyError=true;render();}
 }
-function settingsView(){const s=state.settings;return `${header('Settings','<div class="wordmark" aria-label="Yuta">Yuta<span class="brand-dot"></span></div>')}<div class="settings-list">${shortcutRecorder()}<div class="accent-setting"><span><strong>Accent</strong><small>Menu and notch color</small></span><div class="accent-choices" role="group" aria-label="Accent color">${palettes.map(p=>resolvePalette(p.id,s.customAccent)).map(p=>`<button type="button" data-action="accent" data-accent="${p.id}" aria-pressed="${s.accent===p.id}" style="--swatch:${p.color};--swatch-ink:${p.ink}"><span class="accent-swatch" aria-hidden="true">${icon('check')}</span><span>${p.name}</span></button>`).join('')}</div></div><div><span><strong>Shape</strong><small>Floating pill or attached notch</small></span><div class="segmented"><button data-action="shape" data-shape="pill" class="${s.shape==='pill'?'selected':''}">Pill</button><button data-action="shape" data-shape="notch" class="${s.shape==='notch'?'selected':''}">Notch</button></div></div><div><label for="monitor"><strong>Display</strong><small>Display for the notch</small></label><select id="monitor">${monitors.map(m=>`<option value="${m.id}" ${m.id===s.monitor?'selected':''}>${m.name}</option>`).join('')}</select></div><div><span><strong>Deliberate hover</strong><small>Hover for 0.45 seconds, click, or use your shortcut.</small></span><button role="switch" aria-checked="${s.openOnHover}" class="switch" aria-label="Open with deliberate hover" data-action="hoverToggle"><i></i></button></div><div><span><strong>Smart flattening</strong><small>Make room when the idle notch covers a tab or button.</small></span><button role="switch" aria-checked="${s.smartFlatten!==false}" class="switch" aria-label="Flatten over covered controls" data-action="flattenToggle"><i></i></button></div><div><span><strong>Clipboard history</strong><small>Stores up to 200 items, encrypted on this PC</small></span><button role="switch" aria-checked="${s.clipboardEnabled}" class="switch" data-action="capture"><i></i></button></div><div><span><strong>Weather</strong><small>${esc(s.city||'Choose your city')}</small></span>${button('weatherLocation','Edit city','arrow-up-right','subtle')}</div><div><span><strong>Temperature</strong></span><div class="segmented"><button data-action="unit" data-fahrenheit="true" class="${s.fahrenheit?'selected':''}">°F</button><button data-action="unit" data-fahrenheit="false" class="${!s.fahrenheit?'selected':''}">°C</button></div></div></div><div class="settings-bottom"><p>Yuta stays in your system tray.<br>To run at sign-in, add a shortcut to your Windows Startup folder.${hotkey?'':'<br>The shortcut is busy. Use the notch or system tray.'}</p>${button('quit','Quit Yuta','power','subtle')}</div>`;}
+function settingsView(){const s=state.settings;return `${header('Settings','<div class="wordmark" aria-label="Yuta">Yuta<span class="brand-dot"></span></div>')}<div class="settings-list">${shortcutRecorder()}<div class="accent-setting"><span><strong>Accent</strong><small>Menu and notch color</small></span><div class="accent-choices" role="group" aria-label="Accent color">${palettes.map(p=>resolvePalette(p.id,s.customAccent)).map(p=>`<button type="button" data-action="accent" data-accent="${p.id}" aria-pressed="${s.accent===p.id}" style="--swatch:${p.color};--swatch-ink:${p.ink}"><span class="accent-swatch" aria-hidden="true">${icon('check')}</span><span>${p.name}</span></button>`).join('')}</div></div>${darch.settings()}<div><span><strong>Shape</strong><small>Floating pill or attached notch</small></span><div class="segmented"><button data-action="shape" data-shape="pill" class="${s.shape==='pill'?'selected':''}">Pill</button><button data-action="shape" data-shape="notch" class="${s.shape==='notch'?'selected':''}">Notch</button></div></div><div><label for="monitor"><strong>Display</strong><small>Display for the notch</small></label><select id="monitor">${monitors.map(m=>`<option value="${m.id}" ${m.id===s.monitor?'selected':''}>${m.name}</option>`).join('')}</select></div><div><span><strong>Deliberate hover</strong><small>Hover for 0.45 seconds, click, or use your shortcut.</small></span><button role="switch" aria-checked="${s.openOnHover}" class="switch" aria-label="Open with deliberate hover" data-action="hoverToggle"><i></i></button></div><div><span><strong>Smart flattening</strong><small>Make room when the idle notch covers a tab or button.</small></span><button role="switch" aria-checked="${s.smartFlatten!==false}" class="switch" aria-label="Flatten over covered controls" data-action="flattenToggle"><i></i></button></div><div><span><strong>Clipboard history</strong><small>Stores up to 200 items, encrypted on this PC</small></span><button role="switch" aria-checked="${s.clipboardEnabled}" class="switch" data-action="capture"><i></i></button></div><div><span><strong>Weather</strong><small>${esc(s.city||'Choose your city')}</small></span>${button('weatherLocation','Edit city','arrow-up-right','subtle')}</div><div><span><strong>Temperature</strong></span><div class="segmented"><button data-action="unit" data-fahrenheit="true" class="${s.fahrenheit?'selected':''}">°F</button><button data-action="unit" data-fahrenheit="false" class="${!s.fahrenheit?'selected':''}">°C</button></div></div></div><div class="settings-bottom"><p>Yuta stays in your system tray.<br>To run at sign-in, add a shortcut to your Windows Startup folder.${hotkey?'':'<br>The shortcut is busy. Use the notch or system tray.'}</p>${button('quit','Quit Yuta','power','subtle')}</div>`;}
 
 function updateClock(){const el=document.querySelector('#clock');if(el){const parts=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true}).split(' ');el.innerHTML=`${parts[0]}<span>${parts[1]}</span>`;}const remaining=timerRemaining(timer());const time=document.querySelector('#timer-value');if(time)time.textContent=timeText(remaining);const ring=document.querySelector('#timer-ring');if(ring)ring.style.setProperty('--progress',`${timer().duration?remaining/timer().duration*100:0}`);if(previewPill){previewPill.classList.toggle('running',timer().running);const clock=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true}).split(' ');previewPill.querySelector('#pill-time').textContent=timer().running?timeText(remaining):clock[0];previewPill.querySelector('#pill-label').textContent=timer().running?'FOCUS':clock[1];previewPill.title=timer().running?`Focus: ${timeText(remaining)} remaining — Open Yuta`:`Open Yuta · ${shortcutLabel(state.settings.hotkey)}`;}if(!native&&timer().running&&remaining===0){state.timer.running=false;state.timer.remaining=0;save('timer').catch(safeError);toast('Focus complete. Time for a breather.');render();}}
 function startPanelUpdates(){clearInterval(panelTimer);if(!expanded)return;if(!mediaOnly&&tab==='Stats')panelTimer=setInterval(()=>loadStats().catch(safeError),3000);if(mediaOnly||tab==='Home')panelTimer=setInterval(()=>{updateMediaProgress();if(!mediaOnly&&Date.now()-connectionsChecked>3000)refreshConnections().catch(()=>{});},250);}
@@ -308,7 +316,7 @@ async function loadPanel(){
  case 'Stats':await loadStats();return;
 
  case 'Wallpaper':if(!wallpapersLoaded){const version=wallRequest;const next=await cachedLoad('wallpapers',()=>call('wallpapers'));if(version===wallRequest&&!wallpapersLoaded){walls=next;wallpapersLoaded=true;wallRevision++;wallIndex=Math.max(0,walls.findIndex(x=>x.id===state.activeWallpaper));}}break;
- case 'Today':await loadWeather();return;
+ case 'Today':await darch.open();return;
  default:return;
  }
  if(tab===requested&&expanded)render();
@@ -323,7 +331,7 @@ function showDialog(title,body,submit,onSubmit,{remove}={}){
 const field=(name,label,value='',type='text',extra='')=>`<label class="field">${label}<input name="${name}" type="${type}" value="${esc(value)}" ${extra}></label>`;
 function routineEditor(id,name){const r=state.routines.find(x=>x.id===id);showDialog(r?'Edit routine':'A routine of your own',`${field('name','Name',r?.name||name||'','text','required maxlength="60"')}<label class="field">Websites, apps, or folders<textarea name="targets" rows="5" required placeholder="https://github.com&#10;C:\\Dev">${esc(r?.targets.join('\n')||'')}</textarea></label><p class="form-hint">One destination per line, up to 12. Use full Windows paths for apps and folders.</p>`,r?'Save routine':'Create routine',async f=>{const item={id:r?.id||uid(),name:String(f.get('name')).trim(),targets:parseTargets(String(f.get('targets')))};if(!item.name)throw new Error('Give your routine a name.');if(r)state.routines=state.routines.map(x=>x.id===r.id?item:x);else state.routines.push(item);await save('routines');},{remove:r?async()=>{state.routines=state.routines.filter(x=>x.id!==r.id);await save('routines');}:undefined});}
 function eventEditor(id){const e=state.events.find(x=>x.id===id);showDialog(e?'Edit event':'Make a little plan',`${field('title','Event',e?.title||'','text','required maxlength="160"')}${field('date','Date',e?.date||selectedDate,'date','required')}${field('time','Time',e?.time||'09:00','time','required')}`,'Save event',async f=>{const item={id:e?.id||uid(),title:String(f.get('title')).trim(),date:String(f.get('date')),time:String(f.get('time'))};if(!item.title)throw new Error('Enter an event title.');state.events=e?state.events.map(x=>x.id===e.id?item:x):[...state.events,item];await save('events');},{remove:e?async()=>{state.events=state.events.filter(x=>x.id!==e.id);await save('events');}:undefined});}
-async function action(a,b,event){const id=b.dataset?.id;
+async function action(a,b,event){if(await darch.action(a,b))return;const id=b.dataset?.id;
  switch(a){
  case 'expand':return requestOpen();case 'fullMenu':return requestOpen(true);case 'collapse':return call('expand',{value:false});
  case 'navigate':return navigate(b.dataset.tab);
@@ -403,6 +411,7 @@ document.addEventListener('keydown',e=>{
  if(e.ctrlKey&&e.key.toLowerCase()==='k'){e.preventDefault();if(!expanded||mediaOnly)requestOpen(true);openPinEditor();}
  if(e.target.getAttribute('role')==='tab'&&['ArrowRight','ArrowLeft','Home','End'].includes(e.key)){e.preventDefault();const i=tabs.indexOf(parentTab(tab)),next=e.key==='Home'?0:e.key==='End'?tabs.length-1:(i+(e.key==='ArrowRight'?1:tabs.length-1))%tabs.length;navigate(tabs[next]).then(()=>document.querySelector('#tab-'+tabs[next])?.focus()).catch(safeError);}
 });
+on('darch',value=>{darch.accept(value);if(tab==='Today'&&expanded)darch.open().catch(safeError);});
 on('media',acceptMedia);window.addEventListener('blur',()=>{if(hotkeyPhase==='recording'||hotkeyPhase==='arming')cancelShortcutRecording().catch(safeError);});
 on('hotkeyCaptured',shortcut=>captureShortcut(shortcut).catch(safeError));
 on('hotkeyCancel',()=>cancelShortcutRecording().catch(safeError));
@@ -410,4 +419,4 @@ on('hotkeyError',message=>{if(hotkeyPhase==='recording'){hotkeyError=true;hotkey
 on('presentationShown',epoch=>{if(epoch!==presentationEpoch||!expanded)return;root.dataset.preparing='false';animateOpen();});
 on('expanded',setExpanded);on('navigate',next=>navigate(next).catch(safeError));on('apps',value=>{apps=value;if(dialog.open&&dialog.querySelector('#pin-search'))renderPinEditor();if(tab==='Home'&&expanded){render();loadAppIcons(homeShortcuts(apps,state)).catch(safeError);}});on('clipboard',value=>{clipsRevision++;clips=value;if(tab==='Home'&&expanded)render();});on('timerDone',()=>{state.timer.running=false;state.timer.remaining=0;render();toast('Your focus timer is complete.');});
 if(!native){document.body.classList.add('preview');document.querySelector('#preview-caption').hidden=false;document.querySelector('#preview-footer').hidden=false;}else document.body.classList.add('native');
-try{const data=await call('bootstrap');state=data.state;state.settings.hotkey ||= defaultHotkey;state.settings.accent=applyPalette(state.settings.accent,document.documentElement,state.settings.customAccent).id;apps=data.apps;clips=data.clips;monitors=data.monitors;hotkey=data.hotkey;render();if(pendingPresentation!==undefined){const message=pendingPresentation;pendingPresentation=undefined;setExpanded(message);}if(expanded){startPanelUpdates();loadPanel().catch(safeError);}setInterval(()=>{if(expanded||!native)updateClock();},1000);}catch(e){root.innerHTML=empty('arrows-clockwise','Yuta couldn’t load.',esc(e.message));safeError(e);}
+try{const data=await call('bootstrap');state=data.state;darch.accept(data.darch);state.settings.hotkey ||= defaultHotkey;state.settings.accent=applyPalette(state.settings.accent,document.documentElement,state.settings.customAccent).id;apps=data.apps;clips=data.clips;monitors=data.monitors;hotkey=data.hotkey;render();if(pendingPresentation!==undefined){const message=pendingPresentation;pendingPresentation=undefined;setExpanded(message);}if(expanded){startPanelUpdates();loadPanel().catch(safeError);}setInterval(()=>{if(expanded||!native)updateClock();},1000);}catch(e){root.innerHTML=empty('arrows-clockwise','Yuta couldn’t load.',esc(e.message));safeError(e);}

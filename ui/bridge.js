@@ -30,6 +30,8 @@ export async function call(method,args={}){
   demo ||= demoState();
   switch(method){
     case 'bootstrap':return {state:structuredClone(demo),apps:demoApps,clips:demoClips,monitors:[{id:0,name:'Display 1 · primary'}],hotkey:true};
+    case 'darchState':return {status:'unlinked'};
+    case 'darchConnect':case 'darchFrame':case 'darchOpen':case 'darchDisconnect':throw new Error('Connect Darch from the Windows app after the Darch API is deployed.');
     case 'save':demo[args.key]=structuredClone(args.value);localStorage.setItem(previewStorageKey,JSON.stringify(demo));return true;
     case 'hotkeyRecord':return true;
     case 'hotkeySet':{const shortcut=normalizeHotkey(args.shortcut);const next=structuredClone(demo);next.settings.hotkey=shortcut;next.hotkeyVersion=1;localStorage.setItem(previewStorageKey,JSON.stringify(next));demo=next;return {shortcut,label:shortcutLabel(shortcut),registered:true};}

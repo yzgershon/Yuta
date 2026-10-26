@@ -37,7 +37,8 @@ try{
   window.chrome.webview={addEventListener(type,fn){if(type==='message')handlers.push(fn);},postMessage({id,method,args}){
    let result;
    switch(method){
-    case 'bootstrap':result={state,apps,clips,monitors:[{id:0,name:'Main display'}],hotkey:true};break;
+    case 'bootstrap':result={state,apps,clips,monitors:[{id:0,name:'Main display'}],hotkey:true,darch:{status:'unlinked'}};break;
+    case 'darchState':result={status:'unlinked'};break;
     case 'media':result=media;break;
     case 'clipboard':result=clips;break;
     case 'apps':result=apps;break;
@@ -58,9 +59,9 @@ try{
  await page.getByText('Midnight Drive',{exact:true}).waitFor();
  await page.waitForFunction(()=>document.querySelectorAll('.home-app img').length===5&&document.querySelector('.media-card')?.style.getPropertyValue('--media-wash'));
  await page.screenshot({path:path.join(out,'home.png'),animations:'disabled'});
- await page.getByRole('tab',{name:'Today',exact:true}).click();
- await page.locator('.weather strong').filter({hasText:'18'}).waitFor();
- await page.screenshot({path:path.join(out,'today.png'),animations:'disabled'});
+ await page.getByRole('tab',{name:'Darch',exact:true}).click();
+ await page.getByRole('button',{name:'Connect Darch',exact:true}).waitFor();
+ await page.screenshot({path:path.join(out,'darch-connect.png'),animations:'disabled'});
  await page.setViewportSize({width:400,height:144});
  await page.evaluate(()=>window.__docs.emit('expanded',{value:true,view:'media',epoch:2,media:window.__docs.media}));
  await page.getByRole('tabpanel',{name:'Now playing'}).waitFor();
@@ -68,5 +69,5 @@ try{
  await page.screenshot({path:path.join(out,'media.png'),animations:'disabled'});
  const errors=await page.evaluate(()=>window.__yutaErrors);
  if(errors.length)throw new Error(errors.join('\n'));
- console.log('Saved current UI captures with sample data: docs/images/home.png, today.png, media.png');
+ console.log('Saved current UI captures with sample data: docs/images/home.png, darch-connect.png, media.png. The v0.2.0 today.png capture is retained.');
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
