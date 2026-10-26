@@ -10,7 +10,7 @@
     <AssemblyName>Yuta</AssemblyName>
     <Product>Yuta</Product>
     <Title>Yuta</Title>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <ApplicationIcon>ui\assets\yuta.ico</ApplicationIcon>
     <RootNamespace>Yuta</RootNamespace>
     <DefaultItemExcludes>$(DefaultItemExcludes);node_modules\**;artifacts\**;release\**;tests\**</DefaultItemExcludes>
