@@ -1,11 +1,11 @@
 # Install Yuta
 
-Yuta 0.2.0 is a portable app for Windows 11. Download the ZIP for your computer from [GitHub Releases](https://github.com/yzgershon/Yuta/releases/latest):
+Yuta 0.3.0 is a portable app for Windows 11. Download the ZIP for your computer from [GitHub Releases](https://github.com/yzgershon/Yuta/releases/latest):
 
 | Computer | Download |
 | --- | --- |
-| Intel or AMD processor | [Windows x64](https://github.com/yzgershon/Yuta/releases/download/v0.2.0/Yuta-0.2.0-win-x64.zip) |
-| Snapdragon or another Windows ARM processor | [Windows ARM64](https://github.com/yzgershon/Yuta/releases/download/v0.2.0/Yuta-0.2.0-win-arm64.zip) |
+| Intel or AMD processor | [Windows x64](https://github.com/yzgershon/Yuta/releases/download/v0.3.0/Yuta-0.3.0-win-x64.zip) |
+| Snapdragon or another Windows ARM processor | [Windows ARM64](https://github.com/yzgershon/Yuta/releases/download/v0.3.0/Yuta-0.3.0-win-arm64.zip) |
 
 1. Right-click the downloaded ZIP and choose **Extract All**. Move the extracted `Yuta` folder somewhere you want to keep it.
 2. Open that folder and run **Yuta.exe**. Keep its supporting files together; do not run it from inside the ZIP.
@@ -18,7 +18,7 @@ To check your architecture, open **Settings > System > About > System type**. Us
 These builds are unsigned, so Windows may display a reputation warning. Download only from the official release and use its `SHA256SUMS.txt` to check the ZIP if needed:
 
 ```powershell
-Get-FileHash .\Yuta-0.2.0-win-x64.zip -Algorithm SHA256
+Get-FileHash .\Yuta-0.3.0-win-x64.zip -Algorithm SHA256
 ```
 
 Yuta does not enable startup or clipboard recording automatically. Turn on clipboard capture in the app if wanted. Change the shortcut in Settings if Alt + Space is already used by another app. To quit, right-click the tray icon and select Exit.

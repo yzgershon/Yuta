@@ -10,13 +10,13 @@ The Darch frame stays mounted when switching Yuta tabs, preserving drafts and av
 
 ![Original Darch Focus timer and activity summary inside Yuta's compact frame](images/darch-focus.png)
 
-Development preview with a fictional account. This is the original Darch UI with a compact layout; it is not included in the current downloads.
+Preview with a fictional account. This is the original Darch UI with a compact layout, included in Yuta 0.3.0 and later.
 
 Disconnect from Yuta Settings or from **Darch Settings → Connected apps** to revoke the connection. Tokens stay in Windows DPAPI-protected storage and are not exposed to the local UI. The embedded page receives only a one-use bootstrap ticket and an HttpOnly cookie bound to the same revocable grant. Frame messages are checked against Darch's exact origin and the active frame, and cannot directly invoke arbitrary native actions.
 
 ## Integration status
 
-This source change requires the matching Darch API deployment. The existing downloadable Yuta release does not acquire the integration simply because a source branch is pushed. Until the backend is deployed, Yuta shows a deployment/connection error rather than pretending to sync. The local preview and automated integration fixtures use sample accounts. Production sign-in, third-party cookie behavior in the installed WebView2 runtime, and real-account cross-device sync must be checked after Darch deploys.
+The matching Darch API is deployed, and Yuta 0.3.0 includes the native client and compact workspace. The local preview and automated integration fixtures use sample accounts. Production sign-in, embedded cookies in the installed WebView2 runtime, and real-account cross-device sync remain separate from those fixture checks; connect your account to use the live workspace. Yuta reports connection errors instead of displaying sample data in the installed app.
 
 The native client is fixed to `https://darch-sepia.vercel.app/`. API details live in the Darch repository's `docs/API.md`. It uses native browser authorization with PKCE, rotating access and refresh tokens, and an explicit scope list. Read-only projections, a versioned full workspace, Focus commands, and aliases for Darch's remaining feature handlers are available under `/api/v1/`.
 

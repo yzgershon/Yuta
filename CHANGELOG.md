@@ -1,13 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-10-26
 
-- Added the Darch workspace in place of Today, with every account-permitted section, local hide/reorder settings, Chrome sign-in, and a shared Focus countdown. Requires the matching Darch API deployment; not included in v0.2.0 downloads.
+- Added the Darch workspace in place of Today, with every account-permitted section, local hide/reorder settings, Chrome sign-in, and a shared Focus countdown. The matching Darch API is deployed.
 - Added revocable account connections, protected native credentials, retained embedded drafts, and coverage for iframe isolation and disconnect behavior.
 - Reflowed the original Darch UI for the notch: one compact navigation rail, unchanged Darch themes and fonts, side-by-side Focus controls/activity, and bounded calendar/editor scrolling. Removed the separate host navigation and desktop-page scaling overrides.
 - Reduced the compact media player from 400 × 224 to 400 × 144 logical pixels. Playback controls now sit beside the artwork and track details, with the waveform below. Play/pause and text retain their sizes.
 - Compact keyboard navigation follows the visible transport controls before the seek slider; long titles fit without overlapping controls.
-- Home and the other full-menu panels keep their existing dimensions. The v0.2.0 download archives are unchanged.
+- Home and the other full-menu panels keep their existing dimensions. Existing settings, clipboard history, and local tasks remain in the compatibility profile.
+- Updated portable ARM64 and x64 downloads with source commit metadata and SHA-256 checksums.
 
 ## 0.2.0 — 2026-10-25
 
