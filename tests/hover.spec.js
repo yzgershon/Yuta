@@ -2,7 +2,7 @@ import {test,expect} from '@playwright/test';
 import {useNativeBridge} from './native-bridge.fixture.js';
 
 test('default Yuta notch opens on deliberate hover, cancels retraction on reentry, and closes after leaving',async({page})=>{
- await page.goto('/');await page.getByRole('tab',{name:'Today',exact:true}).click();
+ await page.goto('/');await page.getByRole('tab',{name:'Darch',exact:true}).click();
  await page.getByRole('button',{name:'Collapse menu',exact:true}).click();
  const root=page.locator('#yuta');
  const pill=page.getByRole('button',{name:'Open Yuta',exact:true});
@@ -19,7 +19,7 @@ test('default Yuta notch opens on deliberate hover, cancels retraction on reentr
 });
 
 test('passing across the notch, brief pauses, and drags do not expand it',async({page})=>{
- await page.goto('/');await page.getByRole('tab',{name:'Today',exact:true}).click();
+ await page.goto('/');await page.getByRole('tab',{name:'Darch',exact:true}).click();
  await page.getByRole('button',{name:'Collapse menu',exact:true}).click();
  const root=page.locator('#yuta'),pill=page.getByRole('button',{name:'Open Yuta',exact:true});
  const box=await pill.boundingBox(),y=box.y+box.height/2;
@@ -37,7 +37,7 @@ test('passing across the notch, brief pauses, and drags do not expand it',async(
 });
 
 test('click-only setting persists and ignores even a settled hover',async({page})=>{
- await page.goto('/');await page.getByRole('tab',{name:'Today',exact:true}).click();
+ await page.goto('/');await page.getByRole('tab',{name:'Darch',exact:true}).click();
  await page.getByRole('button',{name:'Settings',exact:true}).click();
  const setting=page.getByRole('switch',{name:'Open with deliberate hover'});
  await setting.click();await expect(setting).toHaveAttribute('aria-checked','false');
@@ -50,7 +50,7 @@ test('click-only setting persists and ignores even a settled hover',async({page}
 });
 
 test('closing under the pointer stays closed until it leaves and deliberately returns',async({page})=>{
- await page.goto('/');await page.getByRole('tab',{name:'Today',exact:true}).click();
+ await page.goto('/');await page.getByRole('tab',{name:'Darch',exact:true}).click();
  const root=page.locator('#yuta'),box=await root.boundingBox();
  await page.mouse.move(box.x+box.width/2,box.y+10);
  await page.keyboard.press('Escape');await page.waitForTimeout(850);
@@ -61,9 +61,10 @@ test('closing under the pointer stays closed until it leaves and deliberately re
 });
 
 test('an open dialog and held pointer protect the expanded menu from retraction',async({page})=>{
- await page.goto('/');await page.getByRole('tab',{name:'Today',exact:true}).click();
+ await page.goto('/');await page.getByRole('tab',{name:'Darch',exact:true}).click();
  const root=page.locator('#yuta');
- await page.getByRole('button',{name:'Add event',exact:true}).click();
+ await page.getByRole('button',{name:'Routines',exact:true}).click();
+ await page.getByRole('button',{name:'New routine',exact:true}).click();
  await page.mouse.move(5,850);await page.waitForTimeout(300);
  await expect(page.getByRole('dialog')).toBeVisible();
  await expect(root).toHaveAttribute('data-expanded','true');
@@ -84,7 +85,7 @@ test('every section fits the compact 760px layout with internal scrolling and us
   await page.evaluate(name=>window.__nativeFixture.emit('navigate',name),name);
   await expect(page.getByRole('tabpanel',{name,exact:true})).toBeVisible();
   if(['Home','Today','Stats','Wallpaper'].includes(name)){
-   await expect(page.getByRole('tab',{name,exact:true})).toHaveAttribute('aria-selected','true');
+   await expect(page.getByRole('tab',{name:name==='Today'?'Darch':name,exact:true})).toHaveAttribute('aria-selected','true');
    await expect(page.locator('[role=tab][aria-selected=true]')).toHaveCount(1);
   }
   if(name==='Home'){
@@ -110,7 +111,7 @@ test('every section fits the compact 760px layout with internal scrolling and us
   }
   if(name==='Wallpaper')await expect(page.locator('.wallpaper.selected')).toHaveCount(1);
   const layout=await page.evaluate(()=>{
-   const panel=document.querySelector('.panel'),tabs=document.querySelector('.tabs'),root=document.querySelector('#yuta');
+   const panel=document.querySelector('.panel:not([hidden])'),tabs=document.querySelector('.tabs'),root=document.querySelector('#yuta');
    return {pageWidth:document.documentElement.scrollWidth,pageHeight:document.documentElement.scrollHeight,panelWidth:panel.clientWidth,panelScrollWidth:panel.scrollWidth,panelHeight:panel.clientHeight,panelScrollHeight:panel.scrollHeight,panelBottom:panel.getBoundingClientRect().bottom,tabsTop:tabs.getBoundingClientRect().top,rootWidth:root.getBoundingClientRect().width,rootHeight:root.getBoundingClientRect().height};
   });
   expect(layout.rootWidth,`${name} menu width`).toBe(760);
@@ -124,9 +125,7 @@ test('every section fits the compact 760px layout with internal scrolling and us
  }
  await page.evaluate(()=>window.__nativeFixture.emit('navigate','Today'));
  await page.setViewportSize({width:760,height:366});
- await page.getByLabel('New to-do',{exact:true}).fill('A compact task');
- await page.getByRole('button',{name:'Add task',exact:true}).click();
- await expect(page.getByText('A compact task',{exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Connect Darch',exact:true})).toBeVisible();
  await page.screenshot({path:'artifacts/yuta-restored-today.png'});
  expect(await page.evaluate(()=>window.__yutaErrors)).toEqual([]);
 });

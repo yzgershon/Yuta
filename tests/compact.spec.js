@@ -2,9 +2,9 @@ import {test,expect} from '@playwright/test';
 
 for(const [shape,width] of [['pill',168],['notch',176]]){
  test(`compact ${shape} keeps its small bounds and opens with the keyboard`,async({page})=>{
-  await page.addInitScript(shape=>localStorage.setItem('yuta-preview',JSON.stringify({appearanceVersion:2,settings:{shape,monitor:0,clipboardEnabled:false,city:'',fahrenheit:true,openOnHover:false}})),shape);
-  await page.goto('/');await page.getByRole('tab',{name:'Today',exact:true}).click();
-  await page.getByLabel('New to-do',{exact:true}).fill('A draft worth keeping');
+  await page.addInitScript(shape=>{if(!localStorage.getItem('yuta-preview'))localStorage.setItem('yuta-preview',JSON.stringify({appearanceVersion:2,settings:{shape,monitor:0,clipboardEnabled:false,city:'',fahrenheit:true,openOnHover:false}}))},shape);
+  await page.goto('/');await page.getByRole('tab',{name:'Darch',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Connect Darch',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Collapse menu',exact:true}).click();
   const pill=page.getByRole('button',{name:'Open Yuta',exact:true});
   await expect(pill).toBeVisible();
@@ -16,9 +16,8 @@ for(const [shape,width] of [['pill',168],['notch',176]]){
   expect(bounds.width).toBe(width);expect(bounds.height).toBe(28);
   await pill.focus();await page.keyboard.press('Enter');
   await expect(page.getByRole('tabpanel',{name:'Today',exact:true})).toBeVisible();
-  await expect(page.getByLabel('New to-do',{exact:true})).toHaveValue('A draft worth keeping');
-  await page.getByRole('button',{name:'1m',exact:true}).click();
-  await page.getByRole('button',{name:'Start',exact:true}).click();
+  await page.evaluate(()=>{const state=JSON.parse(localStorage.getItem('yuta-preview'));state.timer={duration:600,remaining:600,running:true,endsAt:Date.now()+600000};localStorage.setItem('yuta-preview',JSON.stringify(state));});
+  await page.reload();
   await page.getByRole('button',{name:'Collapse menu',exact:true}).click();
   await expect(pill.locator('#pill-time')).toBeVisible();
   await expect(pill.locator('#pill-label')).toHaveText('FOCUS');

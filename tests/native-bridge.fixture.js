@@ -1,6 +1,6 @@
 // Browser-side protocol fixture. It never calls Windows APIs or accesses user data.
-export async function useNativeBridge(page,{delays={},wallpaperCount=30,hotkey=true,startSection='Today',initialState={}}={}){
- await page.addInitScript(({delays,wallpaperCount,hotkey,initialState})=>{
+export async function useNativeBridge(page,{delays={},wallpaperCount=30,hotkey=true,startSection='Today',initialState={},darch={status:'unlinked'}}={}){
+ await page.addInitScript(({delays,wallpaperCount,hotkey,initialState,darch})=>{
   const state={todos:[],events:[],routines:[],snippets:[],favorites:[],recent:[],files:[],notes:'',settings:{hotkey:'Alt+Space',shape:'notch',monitor:0,clipboardEnabled:false,city:'',fahrenheit:true,openOnHover:true,accent:'custom',customAccent:'#9b80ff'},timer:{remaining:1500,duration:1500,running:false}};
   Object.assign(state,initialState);
   const apps=Array.from({length:200},(_,i)=>({id:`app-${i}`,name:i===0?'Visual Studio Code':`Application ${i}`,target:`C:\\Apps\\app-${i}.exe`,kind:'Application'}));
@@ -9,7 +9,12 @@ export async function useNativeBridge(page,{delays={},wallpaperCount=30,hotkey=t
   const emit=(event,data)=>handlers.forEach(fn=>fn({data:{event,data}}));
   const resultFor=({method,args})=>{
    switch(method){
-    case 'bootstrap':return {state,apps,clips:window.__nativeFixture.clips,monitors:[{id:0,name:'Test display'}],hotkey};
+    case 'bootstrap':return {state,apps,clips:window.__nativeFixture.clips,monitors:[{id:0,name:'Test display'}],hotkey,darch};
+    case 'darchState':return darch;
+    case 'darchFrame':return {url:'https://darch-sepia.vercel.app/yuta#fixture'};
+    case 'darchOpen':return true;
+    case 'darchConnect':return {status:'connecting',message:'Approve the connection in Chrome.'};
+    case 'darchDisconnect':return darch={status:'unlinked'};
     case 'controls':return {volume:64,muted:false,brightness:78,output:'Fixture speakers',battery:84,charging:false};
     case 'connections':return window.__nativeFixture.connections;
     case 'connectionSet':{const f=window.__nativeFixture;if(f.connectionFailure)throw new Error('Windows could not change this connection.');const c=f.connections[args.kind];c.enabled=args.enabled;c.label=args.enabled?'On':'Off';return f.connections;}
@@ -41,7 +46,7 @@ export async function useNativeBridge(page,{delays={},wallpaperCount=30,hotkey=t
    let response;try{response={id:message.id,result:structuredClone(resultFor(message))};}catch(error){response={id:message.id,error:error.message};}
    setTimeout(()=>handlers.forEach(fn=>fn({data:response})),delays[message.method]||0);
   }};
- },{delays,wallpaperCount,hotkey,initialState});
+ },{delays,wallpaperCount,hotkey,initialState,darch});
  await page.goto('/');
  await page.waitForFunction(()=>window.__nativeFixture?.calls.some(x=>x.method==='bootstrap')&&document.querySelector('#yuta .tabs'));
  await page.evaluate(()=>window.__nativeFixture.emit('expanded',true));

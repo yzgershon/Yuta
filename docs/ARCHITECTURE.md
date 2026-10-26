@@ -26,6 +26,7 @@ flowchart LR
 | Compact media view, artwork palette, and shared panel frame | `ui/media.css`, `ui/media-palette.js`, `ui/panels.css` |
 | Local audio-level sampling and amplitude envelope | `Services/AudioLevelService.cs`, `Services/AudioEnvelope.cs` |
 | Native/demo protocol adapters | `ui/bridge.js` |
+| Darch connection, protected credentials, and embedded workspace | `Services/DarchService.cs`, `ui/darch.js`, `ui/darch.css` |
 
 ## Interaction design
 
@@ -40,6 +41,8 @@ On collapse, section polling stops. The WebView remains warm briefly, then suspe
 ## Integration boundaries
 
 The host validates commands from the local UI and blocks external WebView navigation. Launcher targets are bounded to files, folders, applications, and HTTP(S) destinations; a routine is not a shell-script runner.
+
+Darch is an explicit remote-frame exception, confined to its exact HTTPS origin. Native browser authorization uses PKCE and a loopback callback; credentials stay in DPAPI storage. A short-lived, one-use ticket starts the revocable embedded session. Origin- and source-checked frame messages only select sections, signal dialogs, or request opening Darch in Chrome. The remote frame cannot invoke the native bridge. Linked Focus polling continues outside the suspended WebView so the idle notch can show the server deadline. See [Darch](darch.md).
 
 Smart flattening is a geometry policy over Windows accessibility observations. Website exclusions are a separate address-bar hostname mechanism. These features have different data boundaries and should remain separate when changed.
 

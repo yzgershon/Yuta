@@ -11,7 +11,7 @@ const choices=[
 ];
 
 test('personal accents persist while all connections remain blue',async({page})=>{
- await page.goto('/');await page.getByRole('tab',{name:'Today',exact:true}).click();
+ await page.goto('/');await page.getByRole('tab',{name:'Darch',exact:true}).click();
  await page.getByRole('button',{name:'Settings',exact:true}).click();
  const accents=page.getByRole('group',{name:'Accent color',exact:true});
  await expect(accents.getByRole('button',{name:'Violet',exact:true})).toHaveAttribute('aria-pressed','true');
@@ -53,7 +53,7 @@ test('accent choices and unavailable-shortcut warning fit inside full-size nativ
   expect(bounds.x).toBeGreaterThanOrEqual(0);expect(bounds.x+bounds.width).toBeLessThanOrEqual(760);
   expect(bounds.y+bounds.height).toBeLessThanOrEqual(366);
  }
- const layout=await page.locator('.panel').evaluate(panel=>({width:panel.clientWidth,scrollWidth:panel.scrollWidth,height:panel.clientHeight,scrollHeight:panel.scrollHeight}));
+ const layout=await page.locator('.panel:not([hidden])').evaluate(panel=>({width:panel.clientWidth,scrollWidth:panel.scrollWidth,height:panel.clientHeight,scrollHeight:panel.scrollHeight}));
  expect(layout.scrollWidth).toBeLessThanOrEqual(layout.width+1);
  expect(layout.scrollHeight).toBeLessThanOrEqual(layout.height+1);
  await page.screenshot({path:'artifacts/yuta-accent-settings.png'});

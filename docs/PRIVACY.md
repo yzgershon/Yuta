@@ -1,6 +1,6 @@
 # Privacy and storage
 
-Yuta runs locally and does not require a Yuta account. There is no analytics backend, cloud profile sync, or built-in AI service. The UI is served from bundled files through a WebView2 virtual host; it is not a remotely hosted webpage.
+Yuta does not require a Yuta account and has no analytics backend or built-in AI service. The main UI is bundled locally through a WebView2 virtual host. The optional Darch integration embeds Darch's remote workspace after explicit account approval and syncs that workspace with Darch. Yuta's own preferences and routines remain local.
 
 ## What is stored
 
@@ -10,6 +10,7 @@ The compatibility directory is `%LOCALAPPDATA%\Perch`.
 | --- | --- |
 | Settings, notes, tasks, calendar events, routines, shortcuts, recent destinations, timer, and exclusions | `state.json`, ordinary local JSON. These fields are not encrypted. |
 | Captured clipboard text, links, and images | `clipboard.bin`, encrypted with Windows DPAPI for the current Windows account. |
+| Optional Darch access/refresh credentials | `darch-credentials.bin`, protected with Windows DPAPI for the current Windows account. Not included in settings exports or sent to the UI. |
 | WebView2 profile/cache | Local application profile directory. |
 | Application errors | Local `errors.log`, when an error occurs. It may contain paths or integration details. |
 
@@ -28,8 +29,11 @@ History is bounded to 200 entries and a 48 MB content budget, with individual te
 | Weather | Open-Meteo geocoding and forecast APIs | Configured city/postal query, then coordinates for the forecast. No automatic geolocation. |
 | Speed test | Cloudflare speed endpoint | Approximately 11 MB of test download/upload traffic, initiated by the speed-test control. |
 | Launch a website | Your default browser | The destination explicitly stored or selected by you. |
+| Darch, after connecting | `https://darch-sepia.vercel.app/` | Account-authorized planner reads/edits, Focus commands, and Darch's other tools. Chrome handles sign-in; the remote workspace uses a revocable HttpOnly session cookie in the WebView profile. |
 
 Normal network request metadata, such as your IP address, is visible to those service providers. WebView2 and Windows have their own runtime/update behavior outside Yuta's application-level integrations.
+
+Disconnect Darch in Yuta Settings or Darch's Connected apps settings to revoke the grant. Native tokens never enter the embedded UI; a single-use ticket creates its session. The frame cannot call Yuta's native bridge. Darch controls its account storage and existing feature permissions. See [Darch integration](darch.md) for deployment and live-verification limits.
 
 ## Active-window awareness
 
