@@ -9,9 +9,8 @@ test('populated views keep their frame and scroll long content without hiding ac
   events:Array.from({length:12},(_,i)=>({id:'event-'+i,date,time:`${String(i+8).padStart(2,'0')}:00`,title:`Event ${i+1}: a longer appointment title with useful details`})),
   routines:Array.from({length:12},(_,i)=>({id:'routine-'+i,name:`Routine ${i+1}: a saved workspace with a longer descriptive name`,targets:['https://example.com']}))
  }});
- await expect(page.locator('.darch-rail nav button')).toHaveCount(8);
- await page.locator('.darch-rail nav button').last().scrollIntoViewIfNeeded();
- expect(await page.locator('.darch-rail nav').evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
+ await expect(page.locator('#darch-frame')).toHaveCount(0);
+ expect((await page.locator('.darch-stage').boundingBox()).width).toBeGreaterThanOrEqual(700);
  const connect=await page.getByRole('button',{name:'Connect Darch',exact:true}).boundingBox();
  expect(connect.y).toBeGreaterThan(56);expect(connect.y+connect.height).toBeLessThanOrEqual(366);
  expect(await page.locator('#panel').evaluate(el=>el.scrollTop)).toBe(0);

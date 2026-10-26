@@ -11,7 +11,7 @@ export function createDarch({call,render,getSettings,saveSettings,icon,toast}){
  const linked=()=>['connected','offline'].includes(status.status);
  const available=()=>status.snapshot?.tabs||darchTabs.filter(t=>!['sat','admin'].includes(t.id));
  const visible=()=>visibleDarchTabs(getSettings(),available());
- const send=()=>{const frame=document.getElementById('darch-frame');if(ready&&frame)frame.contentWindow?.postMessage({source:'yuta',type:'section',section},darchOrigin);};
+ const send=()=>{const frame=document.getElementById('darch-frame');if(ready&&frame)frame.contentWindow?.postMessage({source:'yuta',type:'section',section,tabs:visible().map(t=>t.id)},darchOrigin);};
  function accept(value){if(!value)return;status=value;if(!linked()){frameUrl='';ready=false;epoch++;clearTimeout(readyTimeout);document.getElementById('darch-frame')?.remove();if(modalOpen){modalOpen=false;call('dialogState',{open:false}).catch(()=>{});}}render();}
  function setVisible(value){if(visibleNow===value)return;visibleNow=value;if(modalOpen)call('dialogState',{open:value}).catch(()=>{});}
  async function open(force=false){
@@ -25,10 +25,9 @@ export function createDarch({call,render,getSettings,saveSettings,icon,toast}){
  }
  function view(){
   const items=visible();if(!items.some(t=>t.id===section))section=items[0]?.id||'today';
-  const stateLabel=loading?'Connecting':status.status==='offline'?'Offline':linked()?'Connected':'Not connected';
   const content=frameUrl?`<iframe id="darch-frame" title="Darch workspace" src="${esc(frameUrl)}" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads" referrerpolicy="no-referrer"></iframe>${frameError?`<div class="darch-frame-error" role="alert">${esc(frameError)}<button data-action="darchReload">Try again</button></div>`:''}`:
    `<div class="darch-welcome"><div class="darch-monogram" aria-hidden="true">D</div><h2>${loading?'Opening Darch…':linked()?'Your Darch workspace':'Your school day, in Yuta.'}</h2><p>${esc(frameError||status.message||(linked()?'Your assignments, focus sessions, and all your Darch tools.':'Connect your Darch account to use every section here. Your changes stay synced.'))}</p>${loading?'':`<button class="darch-primary" data-action="${linked()?'darchReload':'darchConnect'}" ${status.status==='connecting'?'disabled':''}>${status.status==='connecting'?'Waiting for Chrome…':linked()?'Open workspace':'Connect Darch'}${icon('arrow-up-right')}</button>`}<small>${linked()?'':'Sign in and approve in Chrome. No API key needed.'}</small></div>`;
-  return `<div class="darch-shell"><aside class="darch-rail"><div class="darch-brand"><strong>Darch<span></span></strong><button class="icon-button" data-action="darchOpen" title="Open Darch in Chrome" aria-label="Open Darch in Chrome">${icon('arrow-up-right')}</button></div><nav aria-label="Darch sections">${items.map(t=>`<button type="button" data-action="darchSection" data-id="${t.id}" ${t.id==='settings'?'aria-label="Darch settings"':''} ${t.id===section?'aria-current="page"':''}>${esc(t.label)}</button>`).join('')}</nav><div class="darch-status" data-status="${esc(status.status)}"><span></span>${stateLabel}<button class="icon-button" data-action="darchReload" aria-label="Reload Darch" title="Reload Darch">${icon('arrows-clockwise')}</button></div></aside><div class="darch-stage" aria-busy="${loading}">${content}</div></div>`;
+  return `<div class="darch-shell"><div class="darch-stage" aria-busy="${loading}">${content}</div></div>`;
  }
  function settings(){
   const all=visibleDarchTabs({...getSettings(),darchHiddenTabs:[]},darchTabs),hidden=new Set(getSettings().darchHiddenTabs||[]);
@@ -48,7 +47,7 @@ export function createDarch({call,render,getSettings,saveSettings,icon,toast}){
   }
   if(name==='darchMove'){
    const order=visibleDarchTabs({...getSettings(),darchHiddenTabs:[]},darchTabs).map(t=>t.id),i=order.indexOf(button.dataset.id),j=i+Number(button.dataset.direction);
-   if(j>=0&&j<order.length){[order[i],order[j]]=[order[j],order[i]];await saveSettings({darchTabOrder:order});render();}
+   if(j>=0&&j<order.length){[order[i],order[j]]=[order[j],order[i]];await saveSettings({darchTabOrder:order});render();send();}
   }
   return true;
  }

@@ -5,9 +5,13 @@ async function connected(page){
  let requests=0;
  await page.route('https://darch-sepia.vercel.app/**',async route=>{
   requests++;
-  await route.fulfill({contentType:'text/html',body:`<!doctype html><html><body><h1 id="section">today</h1><label>Draft<input id="draft"></label><button id="modal">Open edit dialog</button><script>
+  await route.fulfill({contentType:'text/html',body:`<!doctype html><html><body><nav aria-label="Darch sections">${snapshot.tabs.map(t=>`<button data-section="${t.id}">${t.label}</button>`).join('')}</nav><h1 id="section">today</h1><label>Draft<input id="draft"></label><button id="modal">Open edit dialog</button><script>
   parent.postMessage({source:'darch-yuta',type:'ready'},'http://127.0.0.1:4179');
-  addEventListener('message',e=>{if(e.origin==='http://127.0.0.1:4179'&&e.data.type==='section')document.querySelector('#section').textContent=e.data.section;});
+  addEventListener('message',e=>{if(e.origin==='http://127.0.0.1:4179'&&e.data.type==='section'){
+   for(const link of document.querySelectorAll('[data-section]'))link.hidden=!e.data.tabs.includes(link.dataset.section);
+   document.querySelector('#section').textContent=e.data.tabs.includes(e.data.section)?e.data.section:e.data.tabs[0];
+  }});
+  document.querySelector('nav').onclick=e=>{const section=e.target.dataset.section;if(section){document.querySelector('#section').textContent=section;parent.postMessage({source:'darch-yuta',type:'section',section},'http://127.0.0.1:4179');}};
   document.querySelector('#modal').onclick=()=>parent.postMessage({source:'darch-yuta',type:'dialog',open:true},'http://127.0.0.1:4179');
   </script></body></html>`});
  });
@@ -23,13 +27,14 @@ test('Darch keeps the live workspace and drafts mounted across Yuta tabs and ser
  await expect(frame.getByLabel('Draft')).toHaveValue('Unsaved assignment draft');expect(count()).toBe(1);
  await page.evaluate(snapshot=>window.__nativeFixture.emit('darch',{status:'connected',snapshot}),snapshot);
  await expect(frame.getByLabel('Draft')).toHaveValue('Unsaved assignment draft');expect(count()).toBe(1);
- await page.getByRole('navigation',{name:'Darch sections'}).getByRole('button',{name:'Focus',exact:true}).click();
+ await expect(page.getByRole('navigation',{name:'Darch sections'})).toHaveCount(0);
+ await frame.getByRole('navigation',{name:'Darch sections'}).getByRole('button',{name:'Focus',exact:true}).click();
  await expect(frame.getByRole('heading')).toHaveText('focus');
  await frame.getByRole('button',{name:'Open edit dialog'}).click();expect(await page.evaluate(()=>window.__nativeFixture.dialogOpen)).toBe(true);
- const dimensions=await page.locator('#darch-frame').boundingBox();expect(dimensions.x+dimensions.width).toBeLessThanOrEqual(760);expect(dimensions.y+dimensions.height).toBeLessThanOrEqual(366);
+ const dimensions=await page.locator('#darch-frame').boundingBox();expect(dimensions.width).toBeGreaterThanOrEqual(700);expect(dimensions.x+dimensions.width).toBeLessThanOrEqual(760);expect(dimensions.y+dimensions.height).toBeLessThanOrEqual(366);
 });
 test('hidden sections do not grant SAT or admin access and disconnect clears the frame immediately',async({page})=>{
- await connected(page);const nav=page.getByRole('navigation',{name:'Darch sections'});
+ await connected(page);const nav=page.frameLocator('#darch-frame').getByRole('navigation',{name:'Darch sections'});
  await expect(nav.getByRole('button',{name:'SAT practice'})).toHaveCount(0);await expect(nav.getByRole('button',{name:'Admin',exact:true})).toHaveCount(0);
  await page.getByRole('button',{name:'Settings',exact:true}).click();
  await page.getByRole('switch',{name:'Show Grades in Darch'}).click();
