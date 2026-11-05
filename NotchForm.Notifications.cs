@@ -21,6 +21,7 @@ public sealed partial class NotchForm
         _dialogOpen = true;
         try { access = await _notifications.RequestAsync(); }
         finally { _dialogOpen = false; }
+        if (access.State != "allowed") return access;
         if (access.State == "allowed")
         {
             var settings = _store.Data["settings"]!.DeepClone(); settings["notificationPreviews"] = true;

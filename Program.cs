@@ -9,6 +9,14 @@ internal static class Program
     static void Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
+        if (args.Contains("--notification-status"))
+        {
+            using var notifications = new NotificationPreviewService();
+            var status = new { Version = typeof(Program).Assembly.GetName().Version?.ToString(),
+                PackageIdentity = NotificationPreviewService.Packaged, Access = notifications.Status };
+            File.WriteAllText(Path.Combine(Path.GetTempPath(), "Yuta-notification-status.json"), JsonSerializer.Serialize(status));
+            return;
+        }
         if (args.Contains("--home-probe")) { HomeProbe.RunAsync().GetAwaiter().GetResult(); return; }
         if (args.Contains("--self-test")) { SelfTest.Run(); return; }
         if (args.Contains("--network-test")) { SelfTest.NetworkAsync().GetAwaiter().GetResult(); return; }

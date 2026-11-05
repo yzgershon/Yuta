@@ -5,7 +5,7 @@ using Windows.Storage.Streams;
 namespace Yuta.Services;
 
 internal sealed record NotificationPreview(uint Id, string App, string Title, string Body, DateTimeOffset Created, byte[]? Icon = null);
-internal sealed record NotificationAccess(string State, bool Enabled);
+internal sealed record NotificationAccess(string State, bool Enabled, string? DiagnosticCode = null);
 
 // No inbox, disk storage or backlog. Startup/reconnect establishes a baseline;
 // hidden and rate-limited alerts are consumed rather than replayed later.
@@ -52,7 +52,7 @@ internal sealed class NotificationPreviewService : IDisposable
             if (!Packaged) return new("package-required", Enabled);
             try { return new(UserNotificationListener.Current.GetAccessStatus() switch
                 { UserNotificationListenerAccessStatus.Allowed => "allowed", UserNotificationListenerAccessStatus.Denied => "denied", _ => "permission-required" }, Enabled); }
-            catch { return new("unavailable", Enabled); }
+            catch (Exception error) { return new("unavailable", Enabled, $"0x{error.HResult:X8}"); }
         }
     }
     internal void SetEnabled(bool enabled) { if (enabled == Enabled) return; Enabled = enabled; _policy.Reset(); }
@@ -61,7 +61,7 @@ internal sealed class NotificationPreviewService : IDisposable
         if (!Packaged || _disposed) return Status;
         // Invoked only by the user's Enable button, on the Windows UI thread.
         try { await UserNotificationListener.Current.RequestAccessAsync(); }
-        catch { return new("unavailable", false); }
+        catch (Exception error) { return new("unavailable", false, $"0x{error.HResult:X8}"); }
         return Status;
     }
     internal async Task PollAsync(Func<bool> canPresent)
