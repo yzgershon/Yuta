@@ -77,10 +77,10 @@ public sealed partial class NotchForm : Form
         _pill.TopMost = !smoke;
         Controls.Add(_web); Size = IdleSize(); _visualSize = Size;
         _web.Size = PanelSize(PanelWidth, _panelHeight); PositionWindow();
-        _pill.MouseUp += (_, e) => { if (e.Button == MouseButtons.Left && !_contextMenuOpen) OpenFirst(); };
+        _pill.MouseUp += (_, e) => { if (e.Button != MouseButtons.Left || _contextMenuOpen) return; if (_pill.ClearNotification()) { UpdateIdleActivityGeometry(); _hoverRequiresExit = true; } else OpenFirst(); };
         _pill.MouseEnter += (_, _) =>
         {
-            if (_expanded || _hoverRequiresExit || _contextMenuOpen || !Setting("openOnHover", true)) return;
+            if (_expanded || _hoverRequiresExit || _contextMenuOpen || _transientForeground || _pill.NotificationVisible || !Setting("openOnHover", true)) return;
             _hoverIntent.Reset();
             var point = _pill.PointToClient(Cursor.Position);
             _hoverIntent.Observe(new PointF(point.X / _pill.RenderScale, point.Y / _pill.RenderScale), Control.MouseButtons != MouseButtons.None, Environment.TickCount64);
@@ -104,6 +104,8 @@ public sealed partial class NotchForm : Form
         _timerAlarm.Tick += (_, _) => { CheckTimer(); UpdatePill(); _ = PollDarchAsync(); };
         _system.MediaChanged += MediaChanged;
         _devices.Notice += ActivityNotice;
+        _notifications.SetEnabled(!_smoke && Setting("notificationPreviews", false));
+        _notifications.Preview += ShowNotification;
         UpdatePill();
         Load += async (_, _) => await InitializeAsync();
         Deactivate += (_, _) => { if (_expanded && !_dialogOpen && !_webDialogOpen && !_contextMenuOpen && !_hotkeyRecording && !_smoke) Expand(false); };
@@ -204,13 +206,13 @@ public sealed partial class NotchForm : Form
         UpdateShortcutLabel();
         return new { shortcut = next.Shortcut, label = next.Label, registered = _hotkey };
     }
-    private int IdleHeight => _pill.Flattened ? NotchGeometry.FlatHeight : NotchGeometry.IdleHeight;
+    private int IdleHeight => _pill.Flattened ? NotchGeometry.FlatHeight : _pill.HeightFor();
     private int IdleWidth => _pill.Flattened ? (Setting("shape", "notch") == "notch" ? NotchGeometry.NotchWidth : NotchGeometry.PillWidth) : _pill.WidthFor(Setting("shape", "notch") == "notch");
     private void ObserveHoverIntent()
     {
         var point = _pill.PointToClient(Cursor.Position);
         using var outline = NotchGeometry.Create(_pill.ClientRectangle, _pill.RenderScale, _pill.Attached);
-        if (_expanded || _hoverRequiresExit || _contextMenuOpen || OverlayHidden || !_pill.Visible || !Setting("openOnHover", true) || !outline.IsVisible(point))
+        if (_expanded || _hoverRequiresExit || _contextMenuOpen || _transientForeground || _pill.NotificationVisible || OverlayHidden || !_pill.Visible || !Setting("openOnHover", true) || !outline.IsVisible(point))
         {
             _hover.Stop(); _hoverIntent.Reset(); return;
         }
@@ -306,6 +308,7 @@ public sealed partial class NotchForm : Form
     {
         _hover.Stop(); _hoverIntent.Reset();
         if (value) _userHidden = false;
+        if (value) _pill.ClearNotification();
         if (_expanded == value && (!value || _mediaOnly == mediaOnly)) return;
         var epoch = ++_presentationEpoch;
         _presentationWaiting = false;
@@ -368,6 +371,8 @@ public sealed partial class NotchForm : Form
     {
         if (!_smoke) _devices.CheckPower();
         _pill.ExpireNotice(Environment.TickCount64);
+        if (_pill.ExpireNotification(Environment.TickCount64)) _hoverRequiresExit = _pill.ClientRectangle.Contains(_pill.PointToClient(Cursor.Position));
+        if (!_smoke) _ = _notifications.PollAsync(CanPreviewNotification);
         var timer = _store.Data["timer"]; var running = timer?["running"]?.GetValue<bool>() == true;
         var seconds = running ? Math.Max(0, (long)Math.Ceiling(((timer?["endsAt"]?.GetValue<long>() ?? 0) - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 1000d)) : 0;
         var darchClock = _darch.FocusClock;
@@ -435,7 +440,12 @@ public sealed partial class NotchForm : Form
         string Text(string key) => args[key]?.GetValue<string>() ?? "";
         switch (method)
         {
-            case "bootstrap": return new { darch = _darch.Status, state = _store.Data, apps = _launcher.Apps, clips = await _clipboard.ReadUiItemsAsync(), hotkey = _hotkey, monitors = Screen.AllScreens.Select((s, i) => new { id = i, name = $"Display {i + 1}{(s.Primary ? " · primary" : "")}" }) };
+            case "bootstrap": return new { notifications = _notifications.Status, darch = _darch.Status, state = _store.Data, apps = _launcher.Apps, clips = await _clipboard.ReadUiItemsAsync(), hotkey = _hotkey, monitors = Screen.AllScreens.Select((s, i) => new { id = i, name = $"Display {i + 1}{(s.Primary ? " · primary" : "")}" }) };
+            case "notificationsEnable": return await EnableNotificationsAsync();
+            case "notificationsStatus": return _notifications.Status;
+            case "notificationPreview":
+                _pill.SetNotification(new(0, "Yuta · Preview", "A little update, right here.", "Brief previews. No inbox. Back to your flow.", DateTimeOffset.UtcNow), Environment.TickCount64);
+                Expand(false); UpdateIdleActivityGeometry(); return true;
             case "darchState": return await _darch.ReadAsync();
             case "darchConnect": return _darch.BeginConnect();
             case "darchDisconnect": return await _darch.DisconnectAsync();
@@ -451,7 +461,9 @@ public sealed partial class NotchForm : Form
                 if (Text("key") == "settings")
                 {
                     _clipboard.Enabled = !_smoke && Setting("clipboardEnabled", false);
-                    if (!Setting("smartFlatten", true)) { _obstructionPolicy.Reset(); ApplySmartFlatten(false); }
+                    _notifications.SetEnabled(!_smoke && Setting("notificationPreviews", false));
+                    if (!_notifications.Enabled) _pill.ClearNotification();
+                    if (!Setting("smartFlatten", true)) { _knownObstructions.Clear(); _obstructionPolicy.Reset(); ApplySmartFlatten(false); }
                     if (oldShape != Setting("shape", "notch") || oldMonitor != Setting("monitor", 0)) RepositionPanel();
                     UpdatePill();
                 }
@@ -605,6 +617,7 @@ public sealed partial class NotchForm : Form
         _darch.Changed -= DarchChanged; _darch.Dispose();
         _system.MediaChanged -= MediaChanged; _system.Dispose();
         _devices.Notice -= ActivityNotice; _devices.Dispose();
+        _notifications.Preview -= ShowNotification; _notifications.Dispose();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= DisplayChanged;
         base.OnFormClosing(e);
     }

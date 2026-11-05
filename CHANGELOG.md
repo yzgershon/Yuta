@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Keep smart flattening stable across Chrome dialogs, Windows flyouts, and temporary accessibility gaps. Detect GatedSpace's custom top bar and preserve app/site exclusions through temporary focus changes.
+- Add opt-in brief notification previews with app identity, title, and a single message line. Previews respect hidden mode, do not reopen the menu, and keep no inbox or saved message history.
+- Add a Windows notification listener and MSIX packaging path. Live notifications require a signed package and explicit Windows permission; the portable edition offers a sample preview. Signed MSIX downloads are not published yet.
+- Document proposed GatedSpace agent activity integration; no agent connection is enabled in this update.
+
 ## 0.3.0 — 2026-10-26
 
 - Added the Darch workspace in place of Today, with every account-permitted section, local hide/reorder settings, Chrome sign-in, and a shared Focus countdown. The matching Darch API is deployed.

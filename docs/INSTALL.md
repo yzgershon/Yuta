@@ -25,6 +25,8 @@ Yuta does not enable startup or clipboard recording automatically. Turn on clipb
 
 ## Updating
 
+The source branch includes optional brief Windows notification previews. Live notification access requires a signed MSIX package and Windows permission; the current portable downloads do not provide it. There is no published MSIX download yet. See [notification setup and packaging](NOTIFICATIONS.md).
+
 There is no automatic updater yet. Quit Yuta from the tray, extract the new release into a new folder, and run its `Yuta.exe`. Settings and saved data remain in `%LOCALAPPDATA%\Perch`, the compatibility profile directory used by earlier builds. Do not delete that directory to update the app.
 
 ## Removing Yuta

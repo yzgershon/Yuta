@@ -7,6 +7,10 @@ internal static class ObstructionTests
 {
     internal static void Run(Action<string, Func<bool>> check, string root)
     {
+        check("GatedSpace reserves its custom top strip, not unrelated content or another display", () =>
+            NotchObstructionReader.CoversAppChrome(new(800, 0, 176, 28), new(-8, -8, 1936, 1096))
+            && !NotchObstructionReader.CoversAppChrome(new(800, 0, 176, 28), new(50, 150, 1000, 700))
+            && !NotchObstructionReader.CoversAppChrome(new(-1000, 0, 176, 28), new(0, 0, 1920, 1080)));
         check("Smart flattening detects covered tabs and buttons but ignores adjacent controls and empty title bars", () =>
         {
             var notch = new Rectangle(800, 0, 176, 28);
@@ -34,12 +38,14 @@ internal static class ObstructionTests
                 && policy.Observe(new(true, true), 600) && policy.Observe(new(true, false), 700)
                 && policy.Observe(new(true, false), 1449) && !policy.Observe(new(true, false), 1450);
         });
-        check("Unavailable providers expire safely and app changes clear previous overlap", () =>
+        check("Unavailable providers preserve a flattened notch until confirmed clear geometry", () =>
         {
             var policy = new ObstructionPolicy(); policy.Observe(new(true, true), 0); policy.Observe(new(true, true), 300);
-            if (!policy.Observe(default, 1000) || policy.Observe(default, 3301)) return false;
-            policy.Observe(new(true, true), 4000); policy.Observe(new(true, true), 4300); policy.Reset();
-            return !policy.Flattened && !policy.Observe(default, 4500);
+            if (!policy.Observe(default, 1000) || !policy.Observe(default, 30000)) return false;
+            if (!policy.Observe(new(true, false), 30100) || !policy.Observe(default, 30600)
+                || !policy.Observe(new(true, false), 30700) || !policy.Observe(new(true, false), 31449)
+                || policy.Observe(new(true, false), 31450)) return false;
+            policy.Reset(); return !policy.Flattened && !policy.Observe(default, 32000);
         });
         check("A stalled accessibility read is shared only by the same window and geometry", () =>
         {

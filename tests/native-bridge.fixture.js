@@ -32,6 +32,9 @@ export async function useNativeBridge(page,{delays={},wallpaperCount=30,hotkey=t
     case 'presentationReady':emit('presentationShown',args.epoch);return true;
     case 'resize':return true;
     case 'settings':return true;
+    case 'notificationsStatus':return window.__nativeFixture.notificationAccess||{state:'package-required',enabled:false};
+    case 'notificationsEnable':return window.__nativeFixture.notificationAccess||{state:'permission-required',enabled:false};
+    case 'notificationPreview':return true;
     case 'dialogState':window.__nativeFixture.dialogOpen=args.open;return true;
     case 'hotkeyRecord':window.__nativeFixture.hotkeyRecording=args.active;return true;
     case 'hotkeySet':if(window.__nativeFixture.hotkeyConflict)throw new Error('This shortcut is already in use. Your previous shortcut is unchanged.');state.settings.hotkey=args.shortcut;return {shortcut:args.shortcut,label:args.shortcut,registered:true};

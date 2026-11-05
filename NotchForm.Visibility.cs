@@ -8,6 +8,8 @@ public sealed partial class NotchForm
     private readonly BrowserSiteReader _siteReader = new();
     private ContextMenuStrip? _visibilityMenu;
     private AppContextInfo? _activeApp;
+    private readonly ForegroundSession _foregroundSession = new();
+    private bool _transientForeground;
     private bool _visibilitySuppressed, _explicitOpen, _contextMenuOpen, _sitePollBusy;
     private long _lastSitePoll;
     private int _menuGeneration;
@@ -110,35 +112,30 @@ public sealed partial class NotchForm
     private void RefreshActiveApp()
     {
         var foreground = Native.GetForegroundWindow();
-        var context = ForegroundContext.Capture(foreground);
-        if (context is not null) _previousWindow = foreground;
-        else
+        var observation = ForegroundContext.Observe(foreground);
+        _activeApp = _foregroundSession.Observe(observation, ForegroundContext.Usable(_foregroundSession.Active));
+        if (_activeApp is not null) _previousWindow = _activeApp.Window;
+        _transientForeground = _foregroundSession.Transient;
+        if (_transientForeground)
         {
-            Native.GetWindowThreadProcessId(foreground, out var pid);
-            var kind = new System.Text.StringBuilder(128); Native.GetClassName(foreground, kind, kind.Capacity);
-            if (pid == Environment.ProcessId || kind.ToString() is "Shell_TrayWnd" or "Shell_SecondaryTrayWnd")
-                context = ForegroundContext.Capture(_previousWindow);
+            if (_pill.ClearNotification()) UpdateIdleActivityGeometry();
+            _hover.Stop(); _hoverIntent.Reset();
+            _hoverRequiresExit = _pill.ClientRectangle.Contains(_pill.PointToClient(Cursor.Position));
         }
-        if (context is null) { _activeApp = null; return; }
-        // A temporarily inaccessible address bar retains the last confirmed host
-        // for this window. Never reuse it across windows or executable identities.
-        if (_activeApp?.Window == context.Window && _activeApp.Path == context.Path)
-            context = context with { Site = _activeApp.Site };
-        _activeApp = context;
     }
 
     private async void ForegroundTick()
     {
         RefreshActiveApp(); ApplyVisibility(); EnsureOverlayOnTop();
         _ = ObserveObstructionAsync();
-        if (_sitePollBusy || _contextMenuOpen || _activeApp is not { Browser: true } target
+        if (_sitePollBusy || _contextMenuOpen || _transientForeground || _activeApp is not { Browser: true } target
             || _visibility.Read().Sites.Length == 0 || Environment.TickCount64 - _lastSitePoll < 600) return;
         _lastSitePoll = Environment.TickCount64; _sitePollBusy = true;
         try
         {
             var site = await _siteReader.ReadAsync(target.Window).WaitAsync(TimeSpan.FromSeconds(2));
             if (IsDisposed || Disposing || _allowClose || _activeApp?.Window != target.Window || _activeApp.Path != target.Path) return;
-            if (site.Known) { _activeApp = target with { Site = site.Host }; ApplyVisibility(); }
+            if (site.Known) { _foregroundSession.SetSite(target.Window, target.Path, site.Host); _activeApp = _foregroundSession.Active; ApplyVisibility(); }
         }
         catch (TimeoutException) { /* A slow accessibility provider never blocks the notch. */ }
         catch (Exception error) { Program.Log(error); }
@@ -151,6 +148,7 @@ public sealed partial class NotchForm
         if (_contextMenuOpen) return;
         if (OverlayHidden)
         {
+            _pill.ClearNotification();
             if (_expanded) Expand(false);
             _hover.Stop(); _hoverIntent.Reset();
             if (!_animation.Enabled) { Hide(); _pill.Hide(); }

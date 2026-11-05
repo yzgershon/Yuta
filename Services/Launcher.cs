@@ -53,7 +53,7 @@ public sealed class Launcher(Store store)
     }
     public static void Settings(string page)
     {
-        if (!new[] { "network-wifi", "bluetooth", "display", "sound", "notifications", "powersleep", "personalization-background" }.Contains(page)) throw new ArgumentException("Unknown settings page.");
+        if (!new[] { "network-wifi", "bluetooth", "display", "sound", "notifications", "privacy-notifications", "powersleep", "personalization-background" }.Contains(page)) throw new ArgumentException("Unknown settings page.");
         Process.Start(new ProcessStartInfo("ms-settings:" + page) { UseShellExecute = true });
     }
 }

@@ -37,7 +37,7 @@ internal sealed partial class IdleNotchWindow
         if (contextChanged) { _contentVersion++; if (Visible) RefreshSurface(); }
         return contextChanged;
     }
-    internal int WidthFor(bool attached) => HasActivity || TimerRunning ? NotchGeometry.ActivityWidth : attached ? NotchGeometry.NotchWidth : NotchGeometry.PillWidth;
+    internal int WidthFor(bool attached) => NotificationVisible ? 320 : HasActivity || TimerRunning ? NotchGeometry.ActivityWidth : attached ? NotchGeometry.NotchWidth : NotchGeometry.PillWidth;
     internal bool ActivityAnimating => _activityTick.Enabled;
     internal int ActivityFrame => _activityFrame;
     internal bool ReducedMotion { get => _reducedMotion; set { _reducedMotion = value; _contentVersion++; RefreshSurface(); UpdateActivityTimer(); } }
@@ -102,7 +102,7 @@ internal sealed partial class IdleNotchWindow
                 catch (Exception error) when (error is ArgumentException or FormatException or OutOfMemoryException) { /* Use the music glyph for unavailable artwork. */ }
             }
         }
-        AccessibleDescription = playing ? $"Playing {media.Title} by {media.Artist}" : "Current time";
+        if (!NotificationVisible) AccessibleDescription = playing ? $"Playing {media.Title} by {media.Artist}" : "Current time";
         _contentVersion++; RefreshSurface(); UpdateActivityTimer();
     }
 
