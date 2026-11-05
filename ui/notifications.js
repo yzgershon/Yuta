@@ -12,7 +12,7 @@ export function notificationSettings(access={state:'package-required'},enabled=f
 export function showNotificationSample(){
  document.querySelector('.notification-sample')?.remove();
  const preview=document.createElement('button');preview.type='button';preview.className='notification-sample';preview.setAttribute('aria-label','Dismiss sample notification');
- preview.style.clipPath=`path('${notchPath(320,64)}')`;
+ preview.style.clipPath=`path('${notchPath(Math.min(320,window.innerWidth),64)}')`;
  preview.innerHTML='<span class="notification-sample-icon" aria-hidden="true">Y</span><span><small>Yuta · Preview</small><strong>A little update, right here.</strong><span>Brief previews. No inbox. Back to your flow.</span></span><span aria-hidden="true">×</span>';
  preview.addEventListener('click',()=>preview.remove());document.body.append(preview);setTimeout(()=>preview.remove(),5500);
 }

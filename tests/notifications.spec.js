@@ -8,6 +8,10 @@ test('portable notifications explain setup and show a dismissible preview withou
  const sample=page.getByRole('button',{name:'Dismiss sample notification'});
  await expect(sample).toBeVisible();await expect(sample).toContainText('No inbox');
  await sample.click();await expect(sample).toHaveCount(0);
+ await page.setViewportSize({width:280,height:900});
+ await page.getByRole('button',{name:'Try a preview',exact:true}).click();
+ const bounds=await sample.boundingBox();expect(bounds.x).toBeGreaterThanOrEqual(0);expect(bounds.x+bounds.width).toBeLessThanOrEqual(280);
+ await sample.click();
  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('yuta-preview')||'{}').settings?.notificationPreviews)).not.toBe(true);
 });
 
