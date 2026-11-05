@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+ xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+ xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+ xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
+ xmlns:virtualization="http://schemas.microsoft.com/appx/manifest/virtualization/windows10"
+ xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+ IgnorableNamespaces="uap uap3 desktop6 virtualization rescap">
+ <Identity Name="Yuta.Notch" Publisher="CN=Yuta" Version="0.3.1.0" ProcessorArchitecture="arm64" />
+ <Properties>
+  <DisplayName>Yuta</DisplayName><PublisherDisplayName>Yuta</PublisherDisplayName><Logo>Assets\StoreLogo.png</Logo>
+  <desktop6:FileSystemWriteVirtualization>disabled</desktop6:FileSystemWriteVirtualization>
+  <virtualization:FileSystemWriteVirtualization><virtualization:ExcludedDirectories>
+   <virtualization:ExcludedDirectory>$(KnownFolder:LocalAppData)\Perch</virtualization:ExcludedDirectory>
+  </virtualization:ExcludedDirectories></virtualization:FileSystemWriteVirtualization>
+ </Properties>
+ <Dependencies><TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" /></Dependencies>
+ <Resources><Resource Language="en-us" /></Resources>
+ <Applications><Application Id="Yuta" Executable="Yuta.exe" EntryPoint="Windows.FullTrustApplication">
+  <uap:VisualElements DisplayName="Yuta" Description="Your personal Windows notch" BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" />
+ </Application></Applications>
+ <Capabilities>
+  <uap3:Capability Name="userNotificationListener" />
+  <rescap:Capability Name="runFullTrust" />
+  <rescap:Capability Name="unvirtualizedResources" />
+ </Capabilities>
+</Package>

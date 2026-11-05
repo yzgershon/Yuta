@@ -117,6 +117,7 @@ internal sealed partial class IdleNotchWindow : Form
         g.FillPath(body, outline);
         g.SetClip(outline);
         g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+        if (NotificationVisible) { DrawNotification(g, width, height, scale); return bitmap; }
         var clockOpacity = DrawActivity(g, width, height, scale);
         if (clockOpacity > 0) DrawClock(g, width, height, scale, clockOpacity);
         return bitmap;
@@ -213,7 +214,7 @@ internal sealed partial class IdleNotchWindow : Form
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) { _activityTick.Stop(); _activityTick.Dispose(); _artwork?.Dispose(); _surface?.Dispose(); _surface = null; }
+        if (disposing) { _activityTick.Stop(); _activityTick.Dispose(); _artwork?.Dispose(); _notificationIcon?.Dispose(); _surface?.Dispose(); _surface = null; }
         base.Dispose(disposing);
     }
 

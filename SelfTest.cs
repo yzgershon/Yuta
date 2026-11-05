@@ -25,6 +25,7 @@ internal static class SelfTest
         ActivityTests.Run(Check);
         AudioLevelTests.Run(Check);
         ObstructionTests.Run(Check, root);
+        NotificationTests.Run(Check);
         var store = new Store(root);
         Check("Local state survives reopening", () => { store.Update("notes", JsonValue.Create("A durable note")); return new Store(root).Data["notes"]!.GetValue<string>() == "A durable note"; });
         var legacyRoot = Path.Combine(root, "legacy-profile");

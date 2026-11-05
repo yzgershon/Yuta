@@ -22,6 +22,10 @@ Capture starts **off**. After it is enabled, Yuta collects new copies while runn
 
 History is bounded to 200 entries and a 48 MB content budget, with individual text/image limits. Pins receive retention priority but do not bypass the total budget. DPAPI protects the stored file for the current account; it does not prevent other software already running as that account from accessing the clipboard or your profile.
 
+## Optional notification previews
+
+In a signed MSIX build, Windows can grant Yuta access to notifications after you enable previews and approve its permission prompt. Yuta reads app identity, logo, title, message text, and arrival time locally. It keeps only an in-memory baseline for deduplication and the brief preview; it does not save notification history, log message text, send it to a service, reply, or remove the original Windows alert. Old and hidden-mode alerts are not replayed. Disable previews in Yuta or revoke access in Windows to stop reading. Portable builds provide a fictional sample only. See [notification access](NOTIFICATIONS.md).
+
 ## Optional network requests
 
 | Feature | Destination | Data involved |
@@ -39,7 +43,7 @@ Disconnect Darch in Yuta Settings or Darch's Connected apps settings to revoke t
 
 App exclusions use executable paths. Website exclusions use the hostname exposed by a supported browser's address bar; Yuta saves the excluded host, not a full page path or search query.
 
-Smart flattening reads accessibility control types, visibility, and bounding rectangles. It skips browser document branches and does not read page text, take screenshots, or send screen contents to a service. Provider support is not universal. Reads run outside the UI thread with time, depth, and node bounds.
+Smart flattening reads accessibility control types, visibility, and bounding rectangles. It skips browser document branches; for GatedSpace's custom window chrome it may inspect intersecting document descendants for geometry only. It does not read page text, take screenshots, or send screen contents to a service. Provider support is not universal. Reads run outside the UI thread with time, depth, and node bounds. Temporary Windows flyouts and inaccessible providers retain the last confirmed hidden/flattened state until the application or its geometry actually changes.
 
 Media metadata and artwork come from Windows media sessions. Artwork colors are sampled locally. Music and voice animations read Windows audio-session peak meters and process identities; they do not open a microphone recording stream, capture audio samples, store audio, or transmit audio. Browser voice activity is identified by the browser process, not the meeting tab. System statistics come from local Windows counters. Yuta does not request Spotify credentials or publish listening activity.
 

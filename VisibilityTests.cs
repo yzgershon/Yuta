@@ -7,6 +7,35 @@ internal static class VisibilityTests
 {
     internal static void Run(Action<string, Func<bool>> check, string root)
     {
+        check("Browser context and hidden-site identity survive Windows flyouts, dialogs and missing focus", () =>
+        {
+            var session = new ForegroundSession();
+            var chrome = new AppContextInfo(new(10), "C:\\Chrome\\chrome.exe", "Chrome", true, "example.com");
+            session.Observe(new(ForegroundKind.Application, chrome));
+            foreach (var kind in new[] { ForegroundKind.Transient, ForegroundKind.Unknown, ForegroundKind.Own, ForegroundKind.Transient })
+                if (session.Observe(new(kind)) != chrome) return false;
+            return session.Observe(new(ForegroundKind.Transient, chrome with { Site = null }))?.Site == "example.com";
+        });
+        check("Real app changes and desktop clear old workspace rules while closed windows cannot be retained", () =>
+        {
+            var session = new ForegroundSession();
+            var chrome = new AppContextInfo(new(10), "C:\\Chrome\\chrome.exe", "Chrome", true, "example.com");
+            session.Observe(new(ForegroundKind.Application, chrome));
+            var editor = new AppContextInfo(new(20), "C:\\Code.exe", "Code", false);
+            if (session.Observe(new(ForegroundKind.Application, editor)) != editor || session.Transient) return false;
+            session.Observe(new(ForegroundKind.Transient));
+            if (session.Observe(new(ForegroundKind.Desktop)) is not null) return false;
+            session.Observe(new(ForegroundKind.Application, chrome));
+            return session.Observe(new(ForegroundKind.Transient), false) is null;
+        });
+        check("Shell and browser popups are transient while real apps are not; Electron traversal is narrowly scoped", () =>
+            ForegroundContext.IsTransientHost("ShellExperienceHost", "Windows.UI.Core.CoreWindow")
+            && ForegroundContext.IsTransientHost("CredentialUIBroker", "#32770")
+            && ForegroundContext.IsTransientHost("chrome", "Chrome_WidgetWin_2")
+            && !ForegroundContext.IsTransientHost("explorer", "CabinetWClass")
+            && !ForegroundContext.IsTransientHost("chrome", "Chrome_WidgetWin_1")
+            && ForegroundContext.HasDocumentChrome("C:\\GatedSpace\\GatedSpace.exe")
+            && !ForegroundContext.HasDocumentChrome("C:\\Chrome\\chrome.exe"));
         check("Website rules keep hosts only and reject searches or non-web addresses", () =>
             VisibilityPolicy.SiteHost("https://www.Example.com/private?q=secret#section") == "example.com"
             && VisibilityPolicy.SiteHost("music.example.com/album") == "music.example.com"

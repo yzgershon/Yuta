@@ -8,8 +8,10 @@ public sealed partial class NotchForm
     private readonly ObstructionPolicy _obstructionPolicy = new();
     private bool _obstructionBusy;
     private IntPtr _obstructionWindow;
+    private string? _obstructionPath;
     private long _lastObstructionPoll;
     private Rectangle _obstructionBounds;
+    private readonly Dictionary<(IntPtr Window, string Path), bool> _knownObstructions = new();
 
     private Rectangle NormalIdleBounds()
     {
@@ -27,6 +29,7 @@ public sealed partial class NotchForm
     {
         if (_pill.Flattened == flatten) return;
         _hover.Stop(); _hoverIntent.Reset();
+        if (flatten) _pill.ClearNotification();
         _pill.Flattened = flatten;
         UpdateIdleActivityGeometry();
         _hoverRequiresExit = _pill.ClientRectangle.Contains(_pill.PointToClient(Cursor.Position));
@@ -34,33 +37,37 @@ public sealed partial class NotchForm
 
     private async Task ObserveObstructionAsync()
     {
-        if (_smoke || _expanded || _animation.Enabled || _contextMenuOpen || _dialogOpen || _webDialogOpen || OverlayHidden) return;
+        if (_smoke || _expanded || _animation.Enabled || _contextMenuOpen || _dialogOpen || _webDialogOpen || OverlayHidden || _transientForeground) return;
         if (!Setting("smartFlatten", true) || _activeApp is null)
         {
             _obstructionWindow = IntPtr.Zero; _obstructionPolicy.Reset(); ApplySmartFlatten(false); return;
         }
         var target = _activeApp; var bounds = NormalIdleBounds();
-        if (_obstructionWindow != target.Window || _obstructionBounds != bounds)
+        if (_obstructionWindow != target.Window || _obstructionPath != target.Path || _obstructionBounds != bounds)
         {
-            var sameWindow = _obstructionWindow == target.Window;
-            _obstructionWindow = target.Window; _obstructionBounds = bounds;
-            _obstructionPolicy.Reset(sameWindow && _pill.Flattened);
-            if (!sameWindow) ApplySmartFlatten(false);
+            var sameWindow = _obstructionWindow == target.Window && _obstructionPath == target.Path;
+            _obstructionWindow = target.Window; _obstructionPath = target.Path; _obstructionBounds = bounds;
+            var retained = sameWindow ? _pill.Flattened : _knownObstructions.GetValueOrDefault((target.Window, target.Path));
+            _obstructionPolicy.Reset(retained);
+            ApplySmartFlatten(retained);
         }
         if (_obstructionBusy || Environment.TickCount64 - _lastObstructionPoll < 300) return;
         _obstructionBusy = true; _lastObstructionPoll = Environment.TickCount64;
         try
         {
-            var observation = await _obstructionReader.ReadAsync(target.Window, bounds).WaitAsync(TimeSpan.FromMilliseconds(900));
+            var observation = await _obstructionReader.ReadAsync(target.Window, bounds, ForegroundContext.HasDocumentChrome(target.Path), target.Browser && _pill.Flattened).WaitAsync(TimeSpan.FromMilliseconds(900));
             if (IsDisposed || Disposing || _allowClose || _expanded || _animation.Enabled || _contextMenuOpen
-                || OverlayHidden || !Setting("smartFlatten", true) || _activeApp?.Window != target.Window
+                || OverlayHidden || _transientForeground || !Setting("smartFlatten", true) || _activeApp?.Window != target.Window
                 || _activeApp.Path != target.Path || NormalIdleBounds() != bounds) return;
             ApplySmartFlatten(_obstructionPolicy.Observe(observation, Environment.TickCount64));
+            if (_knownObstructions.Count >= 32 && !_knownObstructions.ContainsKey((target.Window, target.Path))) _knownObstructions.Clear();
+            _knownObstructions[(target.Window, target.Path)] = _pill.Flattened;
         }
         catch (TimeoutException)
         {
             if (!IsDisposed && !Disposing && !_allowClose && !_expanded && !_animation.Enabled && !_contextMenuOpen
-                && !OverlayHidden && Setting("smartFlatten", true) && _activeApp?.Window == target.Window && NormalIdleBounds() == bounds)
+                && !OverlayHidden && !_transientForeground && Setting("smartFlatten", true)
+                && _activeApp?.Window == target.Window && _activeApp.Path == target.Path && NormalIdleBounds() == bounds)
                 ApplySmartFlatten(_obstructionPolicy.Observe(default, Environment.TickCount64));
         }
         catch (Exception error) { Program.Log(error); }

@@ -9,21 +9,23 @@ internal readonly record struct ObstructionObservation(bool Known, bool Overlaps
 internal sealed class NotchObstructionReader
 {
     private readonly object _gate = new();
-    private readonly Func<IntPtr, Rectangle, ObstructionObservation> _read;
+    private readonly Func<IntPtr, Rectangle, ObstructionObservation>? _read;
     private Task<ObstructionObservation>? _pending;
     private IntPtr _window;
     private Rectangle _bounds;
-    internal NotchObstructionReader(Func<IntPtr, Rectangle, ObstructionObservation>? read = null) => _read = read ?? Read;
+    private bool _documentChrome;
+    private bool _retainChrome;
+    internal NotchObstructionReader(Func<IntPtr, Rectangle, ObstructionObservation>? read = null) => _read = read;
 
-    internal Task<ObstructionObservation> ReadAsync(IntPtr window, Rectangle bounds)
+    internal Task<ObstructionObservation> ReadAsync(IntPtr window, Rectangle bounds, bool documentChrome = false, bool retainChrome = false)
     {
         lock (_gate)
         {
             // A stalled provider never creates an unbounded queue of workers.
             if (_pending is { IsCompleted: false })
-                return window == _window && bounds == _bounds ? _pending : Task.FromResult(default(ObstructionObservation));
-            _window = window; _bounds = bounds;
-            return _pending = Task.Run(() => _read(window, bounds));
+                return window == _window && bounds == _bounds && documentChrome == _documentChrome && retainChrome == _retainChrome ? _pending : Task.FromResult(default(ObstructionObservation));
+            _window = window; _bounds = bounds; _documentChrome = documentChrome; _retainChrome = retainChrome;
+            return _pending = Task.Run(() => _read is null ? Read(window, bounds, documentChrome, retainChrome) : _read(window, bounds));
         }
     }
 
@@ -40,7 +42,10 @@ internal sealed class NotchObstructionReader
         || type == ControlType.MenuItem || type == ControlType.Hyperlink || type == ControlType.CheckBox
         || type == ControlType.RadioButton || type == ControlType.Slider;
 
-    private static ObstructionObservation Read(IntPtr window, Rectangle notch)
+    internal static bool CoversAppChrome(Rectangle notch, RectangleF window) =>
+        IntersectsControl(notch, new(window.X, window.Y, window.Width, Math.Min(window.Height, notch.Height * 2)), true, false);
+
+    private static ObstructionObservation Read(IntPtr window, Rectangle notch, bool documentChrome, bool retainChrome)
     {
         try
         {
@@ -49,6 +54,12 @@ internal sealed class NotchObstructionReader
             if (root is null) return default;
             var windowRect = root.Current.BoundingRectangle;
             if (windowRect.IsEmpty || !windowRect.IntersectsWith(new System.Windows.Rect(notch.X, notch.Y, notch.Width, notch.Height))) return new(true, false);
+            // GatedSpace's top strip is custom app chrome, even when Chromium
+            // temporarily exposes it as a single document rather than buttons.
+            // Once browser tabs caused flattening, an in-window popup must not
+            // undo it by temporarily replacing the accessible tab tree. Restore
+            // only after the actual window no longer covers the notch strip.
+            if ((documentChrome || retainChrome) && CoversAppChrome(notch, new((float)windowRect.X, (float)windowRect.Y, (float)windowRect.Width, (float)windowRect.Height))) return new(true, true);
             var walker = TreeWalker.ControlViewWalker;
             var remaining = 180;
             var watch = Stopwatch.StartNew();
@@ -56,13 +67,15 @@ internal sealed class NotchObstructionReader
             void Visit(AutomationElement parent, int depth)
             {
                 if (found) return;
-                if (depth > 10 || remaining <= 0 || watch.ElapsedMilliseconds > 180) { exhausted = true; return; }
+                if (depth > (documentChrome ? 18 : 10) || remaining <= 0 || watch.ElapsedMilliseconds > 180) { exhausted = true; return; }
                 for (var child = walker.GetFirstChild(parent); child is not null; child = walker.GetNextSibling(child))
                 {
                     if (--remaining <= 0 || watch.ElapsedMilliseconds > 180) { exhausted = true; return; }
                     var info = child.Current;
-                    // Browser documents and offscreen branches are never traversed.
-                    if (info.ControlType == ControlType.Document || info.IsOffscreen) continue;
+                    // GatedSpace renders its app chrome in an Electron document.
+                    // Inspect only intersecting geometry/control types, never text,
+                    // names, values, or browser page documents in other apps.
+                    if ((!documentChrome && info.ControlType == ControlType.Document) || info.IsOffscreen) continue;
                     var rect = info.BoundingRectangle;
                     var bounds = rect.IsEmpty ? RectangleF.Empty : new RectangleF((float)rect.X, (float)rect.Y, (float)rect.Width, (float)rect.Height);
                     if (IntersectsControl(notch, bounds, Interactive(info.ControlType), false)) { found = true; return; }
@@ -83,17 +96,17 @@ internal sealed class NotchObstructionReader
 
 internal sealed class ObstructionPolicy
 {
-    private long? _hitSince, _clearSince, _lastKnown;
+    private long? _hitSince, _clearSince;
     internal bool Flattened { get; private set; }
     internal bool Observe(ObstructionObservation value, long now)
     {
         if (!value.Known)
         {
-            _hitSince = null;
-            if (_lastKnown is null || now - _lastKnown > 3000) Reset();
+            // Missing data is not proof that the notch has stopped covering a
+            // control. Popups and busy providers commonly disappear temporarily.
+            _hitSince = null; _clearSince = null;
             return Flattened;
         }
-        _lastKnown = now;
         if (value.Overlaps)
         {
             _clearSince = null; _hitSince ??= now;
@@ -106,5 +119,5 @@ internal sealed class ObstructionPolicy
         }
         return Flattened;
     }
-    internal void Reset(bool flattened = false) { Flattened = flattened; _hitSince = _clearSince = _lastKnown = null; }
+    internal void Reset(bool flattened = false) { Flattened = flattened; _hitSince = _clearSince = null; }
 }
